@@ -1,0 +1,29 @@
+# Voice mapping for characters in the short film.
+# Map each character name to an ElevenLabs voice ID and description.
+# Voice IDs can be found at: https://elevenlabs.io/voice-library
+
+voice_mapping:
+  "林月":
+    voice_id: "EXAVITQu4vr4xnSDxMaL"  # Example voice ID
+    description: "Young female, warm, determined, slight vulnerability"
+    language: "zh"
+
+  "沈浩然":
+    voice_id: "VR6AewLTigWG4xSOukaG"  # Example voice ID
+    description: "Young male, deep, authoritative, hidden warmth"
+    language: "zh"
+
+  "陈婉儿":
+    voice_id: "pNInz6obpgDQGcFmaJgB"  # Example voice ID
+    description: "Young female, sharp, competitive, confident"
+    language: "zh"
+
+  "narrator":
+    voice_id: "onwK4e9ZLuTAKqWW03F9"  # Example voice ID
+    description: "Neutral narrator, calm, storytelling tone"
+    language: "zh"
+
+# Pipeline settings
+settings:
+  mode: "voice_changer"  # Options: voice_changer, tts
+  fallback_to_tts: true  # Fall back to TTS if voice changer fails
