@@ -117,3 +117,17 @@ Structure I2V prompts as:
 [Camera movement], [Character action/motion], [Environmental changes],
 [Emotional tone]
 ```
+
+---
+
+## Development Best Practices
+
+For comprehensive development principles and best practices when working with Claude Code on this project, see the **Development Principles & Best Practices** section in [CLAUDE.md](../CLAUDE.md).
+
+Key principles include:
+- **Think Before Coding**: Make assumptions explicit, ask rather than guess
+- **Simplicity First**: Minimum viable code, no speculative features
+- **Surgical Changes**: Only modify what's necessary
+- **Goal-Driven Execution**: Define clear success criteria
+- **Parallel Processing**: Run multiple Claude sessions for complex work
+- **Documentation**: Maintain institutional memory in this file and CLAUDE.md

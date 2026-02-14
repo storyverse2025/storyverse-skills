@@ -16,7 +16,8 @@ This repo contains 11 Claude Code skills (slash commands) that guide you through
 8. **Consistency** — QA and fix AI-generated images
 9. **Edit** — Assemble final video with subtitles and music
 10. **Review** — Review and annotate the final cut
-11. **Pipeline** — Run the full workflow end-to-end
+11. **Judge** — Evaluate quality and collect feedback for continuous improvement
+12. **Pipeline** — Run the full workflow end-to-end
 
 ## Quick Start
 
@@ -38,7 +39,7 @@ ln -s $(pwd)/storyverse-skills/.claude/commands/*.md /your/project/.claude/comma
 - [StoryVerse MCP Server](https://github.com/storyverse2025/storyverse_mcp) (for image/video generation)
 - [StoryVerse Backend](https://github.com/storyverse2025/mvp_backend) (optional, for full API integration)
 
-See [CLAUDE.md](./CLAUDE.md) for detailed setup instructions.
+See [CLAUDE.md](./CLAUDE.md) for detailed setup instructions and **development principles** for working effectively with Claude Code.
 
 ## Project Structure
 
@@ -56,7 +57,13 @@ storyverse-skills/
 │   ├── sv-consistency.md        # /sv-consistency
 │   ├── sv-edit.md               # /sv-edit
 │   ├── sv-review.md             # /sv-review
+│   ├── sv-judge.md              # /sv-judge
 │   └── sv-pipeline.md           # /sv-pipeline
+├── utils/                       # Python utilities
+│   ├── __init__.py
+│   └── langsmith_feedback.py    # LangSmith integration
+├── docs/                        # Documentation
+│   └── SELF_IMPROVEMENT.md      # Self-improvement system guide
 ├── context/                     # Shared reference documentation
 │   ├── workflow-overview.md
 │   ├── backend-api-reference.md
@@ -77,3 +84,24 @@ storyverse-skills/
 | [mvp_backend](https://github.com/storyverse2025/mvp_backend) | FastAPI backend |
 | [mvp_frontend_ui](https://github.com/storyverse2025/mvp_frontend_ui) | Vanilla JS frontend |
 | [frontend_ui](https://github.com/storyverse2025/frontend_ui) | React + TypeScript frontend |
+
+## Features
+
+### 🎯 Quality Judging & Self-Improvement
+
+StoryVerse learns from your feedback to continuously improve content quality:
+
+- **Quality Evaluation**: Rate AI-generated content across multiple dimensions
+- **LangSmith Integration**: Log feedback to cloud datasets for analytics
+- **Insights Generation**: Identify patterns and optimization opportunities
+- **Continuous Learning**: System improves with each feedback cycle
+
+```bash
+# Judge content quality
+/sv-judge all
+
+# View insights
+cat quality_insights.json
+```
+
+See [docs/SELF_IMPROVEMENT.md](docs/SELF_IMPROVEMENT.md) for details.
