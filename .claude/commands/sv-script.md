@@ -23,7 +23,7 @@ If either file is missing, tell the user which skill to run first (`/sv-intake` 
 If `$STORYVERSE_BACKEND_URL` is set and the project has a `project_id`, call:
 
 ```
-POST $STORYVERSE_BACKEND_URL/api/v1/projects/{project_id}/scripts
+POST http://34.204.80.155/api/v1/projects/{project_id}/scripts
 Body: {
     "inspiration": <from project_brief.json>,
     "file_ids": <if files were uploaded>,

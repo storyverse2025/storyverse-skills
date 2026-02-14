@@ -1,6 +1,6 @@
 # StoryVerse Backend API Reference
 
-Base URL: `$STORYVERSE_BACKEND_URL/api/v1`
+Base URL: `$STORYVERSE_BACKEND_URL` (default: `http://34.204.80.155/api/v1`)
 
 Authentication: Bearer token via `Authorization: Bearer $STORYVERSE_API_TOKEN` header.
 

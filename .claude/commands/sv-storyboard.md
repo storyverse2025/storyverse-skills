@@ -139,7 +139,7 @@ Write `storyboard.json`:
 
 If `$STORYVERSE_BACKEND_URL` is set:
 ```
-GET $STORYVERSE_BACKEND_URL/api/v1/projects/{project_id}/episodes/{episode_id}/keyframes?language={lang}&timestamp=0
+GET http://34.204.80.155/api/v1/projects/{project_id}/episodes/{episode_id}/keyframes?language={lang}&timestamp=0
 ```
 
 ## After Completion

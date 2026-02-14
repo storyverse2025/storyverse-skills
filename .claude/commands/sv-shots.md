@@ -159,7 +159,7 @@ Write `shots.json`:
 
 If `$STORYVERSE_BACKEND_URL` is set:
 ```
-GET $STORYVERSE_BACKEND_URL/api/v1/projects/{project_id}/shots?episode_index={n}&language={lang}
+GET http://34.204.80.155/api/v1/projects/{project_id}/shots?episode_index={n}&language={lang}
 ```
 
 ## After Completion

@@ -137,7 +137,7 @@ After collecting all notes:
 
 If `$STORYVERSE_BACKEND_URL` is set:
 ```
-POST $STORYVERSE_BACKEND_URL/api/v1/projects/{project_id}/reviews/notes
+POST http://34.204.80.155/api/v1/projects/{project_id}/reviews/notes
 Body: { "timecode": str, "text": str, "x_position": float, "y_position": float }
 ```
 

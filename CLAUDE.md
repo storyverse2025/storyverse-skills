@@ -24,7 +24,7 @@ Add the StoryVerse MCP server to your Claude Code MCP settings for image/video g
 {
   "mcpServers": {
     "storyverse": {
-      "url": "http://localhost:8000/mcp",
+      "url": "https://storyverse-ea52ee7d210d5d989df7aa66511a263c.us.langgraph.app/mcp",
       "headers": {
         "Authorization": "Bearer ${BEARER_TOKEN}"
       }
@@ -39,7 +39,7 @@ Add the StoryVerse MCP server to your Claude Code MCP settings for image/video g
 |----------|-------------|-------------|
 | `FAL_KEY` | MCP tools | fal.ai API key for image/video generation |
 | `BEARER_TOKEN` | MCP tools | MCP server authentication token |
-| `STORYVERSE_BACKEND_URL` | Backend API | URL of the mvp_backend FastAPI server |
+| `STORYVERSE_BACKEND_URL` | Backend API | URL of the mvp_backend FastAPI server (default: `http://34.204.80.155/api/v1`) |
 | `STORYVERSE_API_TOKEN` | Backend API | JWT token for backend authentication |
 | `ELEVENLABS_API_KEY` | Voice, Edit | ElevenLabs API key (voice, STT, music) |
 | `GEMINI_API_KEY` | Edit | Google Gemini API key (BGM analysis, transitions) |

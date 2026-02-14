@@ -47,7 +47,7 @@ $ARGUMENTS
 
 6. **Backend integration** (optional): If `$STORYVERSE_BACKEND_URL` is set, create the project via API:
    ```
-   POST $STORYVERSE_BACKEND_URL/api/v1/projects2/{project_id}
+   POST http://34.204.80.155/api/v1/projects2/{project_id}
    ```
    Save the returned `project_id` in `project_settings.json`.
 

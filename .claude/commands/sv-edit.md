@@ -45,7 +45,7 @@ Mix BGM, burn subtitles, apply fade in/out, produce final video.
 If `$STORYVERSE_BACKEND_URL` is set, call the pipeline endpoint:
 
 ```
-POST $STORYVERSE_BACKEND_URL/api/v1/projects/{project_id}/episodes/{episode_id}/edits/pipeline
+POST http://34.204.80.155/api/v1/projects/{project_id}/episodes/{episode_id}/edits/pipeline
 
 Body: {
     "clip_paths": [<list of video file paths or URLs>],

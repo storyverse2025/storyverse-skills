@@ -141,7 +141,7 @@ Write `assets.json`:
 
 If `$STORYVERSE_BACKEND_URL` is set:
 ```
-POST $STORYVERSE_BACKEND_URL/api/v1/projects/{project_id}/characters
+POST http://34.204.80.155/api/v1/projects/{project_id}/characters
 Body: YCharacterEpisodes schema with episode data
 ```
 
