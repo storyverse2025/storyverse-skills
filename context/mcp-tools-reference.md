@@ -2,6 +2,10 @@
 
 The StoryVerse MCP server provides 9 AI generation tools powered by fal.ai. These tools are available when the MCP server is configured in Claude Code.
 
+- **Server**: LangSmith Tool Server v0.2.3
+- **URL**: `https://cdpx7nw32d.us-east-1.awsapprunner.com/mcp`
+- **Auth**: `Authorization: Bearer ${BEARER_TOKEN}` (default: `storyverse2026`)
+
 ## Text-to-Image (T2I)
 
 ### nano_banana_t2i
@@ -156,3 +160,36 @@ Returns: `{video: {url, width, height, duration}, metadata: {...}}`
 | Video from keyframe | `kling_o3_i2v` | Best quality, supports start+end frames |
 | High-quality video | `kling_o3_pro_i2v` | Pro quality, multi-prompt support |
 | Alternative video | `sora2_i2v` | Different style, good for comparison |
+
+## Fallback: Direct fal.ai API
+
+If the MCP server is unavailable, use `$FAL_KEY` to call fal.ai APIs directly via curl:
+
+```bash
+# Sync call (T2I, I2I)
+curl -s "https://fal.run/fal-ai/<model>" \
+  -H "Authorization: Key $FAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "...", ...}'
+
+# Async call (I2V - use queue API)
+curl -s "https://queue.fal.run/fal-ai/<model>" \
+  -H "Authorization: Key $FAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "...", ...}'
+# Then poll status_url from response until completed, then fetch response_url
+```
+
+### fal.ai Model IDs
+
+| MCP Tool | fal.ai Model ID |
+|----------|----------------|
+| `nano_banana_t2i` | `fal-ai/nano-banana/text-to-image` |
+| `grok_imagine_t2i` | `fal-ai/grok-2-aurora/text-to-image` |
+| `nano_banana_i2i` | `fal-ai/nano-banana/image-to-image` |
+| `nano_banana_pro_i2i` | `fal-ai/nano-banana-pro/image-to-image` |
+| `grok_imagine_i2i` | `fal-ai/grok-2-aurora/image-to-image` |
+| `sora2_i2v` | `fal-ai/sora/image-to-video` |
+| `grok_imagine_i2v` | `fal-ai/grok-2-aurora/image-to-video` |
+| `kling_o3_i2v` | `fal-ai/kling-video/v2.1/image-to-video` |
+| `kling_o3_pro_i2v` | `fal-ai/kling-video/v2.1/pro/image-to-video` |

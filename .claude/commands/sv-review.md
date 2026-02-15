@@ -12,7 +12,7 @@ $ARGUMENTS
 
 Read `edit_output.json` from the current directory. If missing, tell the user to run `/sv-edit` first.
 
-Also read `project_settings.json` for context.
+Also read `project_settings.json` for context, and `shots.json` for shot IDs.
 
 ## Procedure
 
@@ -62,11 +62,17 @@ Guide the user through reviewing each aspect:
 ### 3. Collect Review Notes
 
 For each issue found, collect:
+- **ID**: Auto-generated `note_NNN` format
 - **Timecode**: `HH:MM:SS` format
+- **Position**: `x_position` (0-100) and `y_position` (0-100) on the video frame
+- **Text**: Description of the issue
+- **Linked shot**: `linked_shot_id` from `shots.json` (e.g., `shot_003`)
+- **Author**: "AI导演" for automated review, user name for manual review
+- **Status**: "open" (default), "resolved", "wontfix"
 - **Category**: visual, audio, subtitle, pacing, story
-- **Description**: What the issue is
 - **Severity**: critical, major, minor
 - **Suggested fix step**: Which skill to re-run
+- **Suggested fix action**: Specific remediation
 
 Use AskUserQuestion to gather notes interactively.
 
@@ -87,40 +93,52 @@ Use AskUserQuestion to gather notes interactively.
 
 ### 5. Save Review Notes
 
-Write `review_notes.json`:
+Write `review_notes.json` (see `context/json-schemas.md` for full field reference):
 ```json
 {
-  "review_date": "2026-02-13",
+  "review_date": "2026-02-14",
   "episodes": [
     {
-      "episode_index": 1,
+      "episode_number": 1,
       "status": "needs_revision",
       "notes": [
         {
+          "id": "note_001",
           "timecode": "00:01:23",
+          "x_position": 45,
+          "y_position": 30,
+          "text": "这里的表情可以再夸张一点",
+          "linked_shot_id": "shot_003",
+          "author": "AI导演",
+          "status": "open",
+          "category": "visual",
+          "severity": "minor",
+          "suggested_fix_step": "sv-storyboard",
+          "suggested_fix_action": "Regenerate frame 5 with stronger expression"
+        },
+        {
+          "id": "note_002",
+          "timecode": "00:02:45",
+          "x_position": 50,
+          "y_position": 50,
+          "text": "BGM太大声了",
+          "linked_shot_id": "shot_008",
+          "author": "用户",
+          "status": "open",
           "category": "audio",
-          "description": "BGM too loud during dialogue",
           "severity": "major",
           "suggested_fix_step": "sv-edit",
           "suggested_fix_action": "Re-run compose with bgm_volume=0.2"
-        },
-        {
-          "timecode": "00:02:45",
-          "category": "visual",
-          "description": "Character A looks different from reference",
-          "severity": "minor",
-          "suggested_fix_step": "sv-storyboard",
-          "suggested_fix_action": "Regenerate frame 5 with character reference"
         }
       ],
       "overall_rating": 7,
-      "summary": "Good pacing, needs audio adjustments"
+      "summary": "Good pacing, needs audio adjustments and expression fixes"
     }
   ],
   "overall_status": "needs_revision",
   "priority_fixes": [
     "Reduce BGM volume in episode 1",
-    "Regenerate frame 5 in episode 1 for character consistency"
+    "Regenerate frame 5 in episode 1 for character expression"
   ]
 }
 ```
@@ -135,10 +153,21 @@ After collecting all notes:
 
 ### 7. Backend Integration (optional)
 
-If `$STORYVERSE_BACKEND_URL` is set:
+If `$STORYVERSE_BACKEND_URL` is set, **re-read `review_notes.json`** to pick up any user modifications, then sync:
 ```
 POST http://34.204.80.155/api/v1/projects/{project_id}/reviews/notes
-Body: { "timecode": str, "text": str, "x_position": float, "y_position": float }
+Body: { "timecode": str, "text": str, "x_position": float, "y_position": float, "linked_shot_id": str }
+```
+
+**Important**: Always re-read the JSON file immediately before API calls.
+
+## Git Management
+
+After saving `review_notes.json`, commit:
+
+```bash
+git add review_notes.json
+git commit -m "step 10: sv-review - review notes for episode N"
 ```
 
 ## After Completion
@@ -154,3 +183,5 @@ If the video is approved, congratulate the user and note that the short film is 
 - Group related issues together
 - If `$ARGUMENTS` specifies an episode, only review that episode
 - If `$ARGUMENTS` specifies an aspect (visual, audio, etc.), focus on that
+- The `linked_shot_id` field connects notes to specific shots for targeted fixes
+- The `x_position`/`y_position` fields (0-100 range) locate the issue on the video frame

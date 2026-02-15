@@ -2,7 +2,7 @@ You are the StoryVerse Image Consistency Checker. Your job is to detect and fix 
 
 ## Your Task
 
-Analyze all keyframe images against their scene descriptions, detect extra or missing objects, and fix issues. Update `storyboard.json` with corrected images.
+Analyze all keyframe images against their scene descriptions, detect extra or missing objects, and fix issues. Update `storyboard.json` with corrected images and save a `consistency_report.json`.
 
 ## User Input (optional — episode number or specific frame to check)
 
@@ -34,8 +34,9 @@ For each frame in `storyboard.json`:
 1. **Read the image** using the Read tool (if it's a local file) or note the URL
 2. **Compare against the scene description**:
    - Frame `summary` — what should be visually present
-   - `character_ids` — which characters should appear
-   - `scene_id` — the scene/location
+   - `character_ids` — which characters should appear (reference `assets.json` for persona/appearance)
+   - `scene_id` — the scene/location (reference `assets.json` for visual_look)
+   - `prop_ids` — which props should be visible
    - `dialogue` — context for character positioning
 3. **Check for issues**:
    - **Extra objects**: Things in the image not described in the scene
@@ -74,6 +75,11 @@ nano_banana_t2i(
 )
 ```
 
+**Save fixed images as new versions**:
+- Download to `storyboard/episode_{N}/frame_{NNN}_v{next}.png`
+- Copy to `storyboard/episode_{N}/frame_{NNN}_selected.png`
+- Update the frame's `versions` array and `image_url` in `storyboard.json`
+
 ### 4. Generate Consistency Report
 
 Create a report showing:
@@ -92,16 +98,16 @@ Summary: 10/12 PASS, 1 FIXED, 1 ACCEPTED
 
 ### 5. Update Storyboard
 
-Update `storyboard.json` with corrected image URLs for any fixed frames. Keep the original URLs as `original_image_url` for reference.
+Update `storyboard.json` with corrected image URLs for any fixed frames. The original version is preserved in the `versions` array.
 
 ### 6. Save Report
 
-Optionally save `consistency_report.json`:
+Save `consistency_report.json`:
 ```json
 {
   "episodes": [
     {
-      "episode_index": 1,
+      "episode_number": 1,
       "results": [
         {
           "frame_number": 1,
@@ -116,13 +122,22 @@ Optionally save `consistency_report.json`:
           "status": "FAIL",
           "issues": ["Extra person in background", "Wrong lighting"],
           "action": "regenerated",
-          "original_image_url": "https://...",
-          "fixed_image_url": "https://..."
+          "original_image_url": "storyboard/episode_1/frame_002_v1.png",
+          "fixed_image_url": "storyboard/episode_1/frame_002_v2.png"
         }
       ]
     }
   ]
 }
+```
+
+## Git Management
+
+After updating `storyboard.json` and saving `consistency_report.json`, commit:
+
+```bash
+git add storyboard.json consistency_report.json storyboard/episode_*/
+git commit -m "step 8: sv-consistency - check and fix N frames"
 ```
 
 ## After Completion
@@ -137,3 +152,5 @@ Suggest running `/sv-edit` to assemble the final video (if shots are ready), or 
 - Character consistency is the most important check
 - If `$ARGUMENTS` specifies an episode number, only check that episode
 - If `$ARGUMENTS` specifies a frame number, only check that frame
+- Fixed images are saved as new versions, preserving the originals
+- All file paths in JSON use relative paths from the project root

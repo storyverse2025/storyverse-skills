@@ -55,33 +55,86 @@ Used for storyboard keyframes. Maps to camera framing:
 
 ## File Naming Conventions
 
-### Generated Assets
-- Characters: `bc_{character_name_pinyin}.png` (e.g., `bc_fu_si_nian.png`)
-- Scenes: `scene_{scene_id}.png`
-- Props: `prop_{prop_id}.png`
+### ID Formats
 
-### Storyboard Frames
-- `beat_{NNN}.png` (e.g., `beat_001.png`, `beat_002.png`)
+| Asset Type | ID Format | Example |
+|-----------|-----------|---------|
+| Character | `char_NNN` | `char_001`, `char_002` |
+| Scene | `scene_NNN` | `scene_001`, `scene_002` |
+| Prop | `prop_NNN` | `prop_001`, `prop_002` |
+| Frame | `frame_NNN` | `frame_001`, `frame_002` |
+| Shot | `shot_NNN` | `shot_001`, `shot_002` |
+| Look | `look_NNN` | `look_001`, `look_002` |
+| Note | `note_NNN` | `note_001`, `note_002` |
 
-### Video Shots
-- `beat_{NNN}.mp4` (e.g., `beat_001.mp4`, `beat_002.mp4`)
+### Version Numbering
 
-### Edit Pipeline Output
-- `merged.mp4` - Concatenated video
-- `subtitles.srt` / `subtitles.ass` - Subtitle files
-- `bgm.wav` - Background music
-- `final.mp4` - Final composed video
+All generated media uses version suffixes:
+- **Version format**: `_v{N}` where N starts at 1, increments per regeneration
+- **Selected format**: `_selected` suffix for the currently chosen version
+- Versions are **never deleted** — they accumulate as v1, v2, v3, etc.
+
+### Versioned File Naming
+
+| Asset Type | Pattern | Example |
+|-----------|---------|---------|
+| Character image | `{id}_v{N}.png` | `char_001_v1.png`, `char_001_v2.png` |
+| Character selected | `{id}_selected.png` | `char_001_selected.png` |
+| Scene image | `{id}_v{N}.png` | `scene_001_v1.png` |
+| Prop image | `{id}_selected.png` | `prop_001_selected.png` |
+| Storyboard frame | `{id}_v{N}.png` | `frame_001_v1.png` |
+| Video shot | `{id}_v{N}.mp4` | `shot_001_v1.mp4` |
+| Harmonized clip | `beat_{NNN}_v{N}.mp4` | `beat_001_v1.mp4` |
+| Final video | `final_v{N}.mp4` | `final_v1.mp4` |
+
+### Selected File Convention
+
+The `_selected` file is a **copy** of the currently chosen version:
+- When a new version is generated, save as `{id}_v{N}.{ext}`
+- The first successful generation is selected by default
+- Copy the selected version to `{id}_selected.{ext}`
+- When user picks a different version, update the `_selected` copy
+- JSON `image_url`/`video_url` fields always point to the `_selected` file
+
+### Relative Path Convention
+
+All file paths in JSON state files use **relative paths** from the project root:
+- `assets/characters/char_001_selected.png` (correct)
+- `/home/user/project/assets/characters/char_001_selected.png` (wrong — no absolute paths)
+- `https://fal.ai/...` (wrong — no remote URLs in final JSON; download first)
+
+When media is generated via MCP tools, the skill should:
+1. Receive the remote URL from the tool
+2. Download the file to the local versioned path
+3. Store the **relative local path** in the JSON file
+
+### Directory Structure
+
+```
+assets/
+├── characters/        # Character reference images
+├── scenes/            # Scene/location images
+└── props/             # Prop images
+storyboard/
+└── episode_{N}/       # Keyframe images per episode
+shots/
+└── episode_{N}/       # Video clips per episode (LFS)
+harmonized/
+└── episode_{N}/       # Voice-harmonized clips (LFS)
+output/
+└── episode_{N}/       # Final edited videos (LFS)
+```
 
 ## Character Roles
 
 | Role | Chinese | Typical Count |
 |------|---------|---------------|
-| `protagonist_female` | 女主角 | 1 |
-| `protagonist_male` | 男主角 | 1 |
-| `supporting_female` | 女配角 | 1-3 |
-| `supporting_male` | 男配角 | 1-3 |
-| `antagonist` | 反派 | 1-2 |
-| `minor` | 路人 | 0-5 |
+| `protagonist_female` / `女主角` | 女主角 | 1 |
+| `protagonist_male` / `男主角` | 男主角 | 1 |
+| `supporting_female` / `女配角` | 女配角 | 1-3 |
+| `supporting_male` / `男配角` | 男配角 | 1-3 |
+| `antagonist` / `反派` | 反派 | 1-2 |
+| `minor` / `路人` | 路人 | 0-5 |
 
 ## Episode Structure
 
@@ -117,6 +170,16 @@ Structure I2V prompts as:
 [Camera movement], [Character action/motion], [Environmental changes],
 [Emotional tone]
 ```
+
+## Backend API Data Flow
+
+When calling backend APIs, always **re-read the JSON state file** immediately before making the API call. This ensures that any external modifications the user made to JSON files (outside of Claude Code) are picked up and sent to the backend. The JSON file is the source of truth for each pipeline step.
+
+Pattern:
+1. Read the current JSON state file
+2. Use its contents to construct the API request body
+3. Make the API call
+4. Update the JSON file with any response data (e.g., IDs, URLs)
 
 ---
 

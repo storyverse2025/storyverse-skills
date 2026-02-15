@@ -24,7 +24,18 @@ __pycache__/
 *.egg-info/
 .venv/
 
+# Generated media (storyboard frames, shots, etc.)
+frame_*.png
+assets/
+storyboard/
+shots/
+harmonized/
+output/
+
 # State files (generated during skill execution)
+system_script.json
+quality_feedback.json
+quality_insights.json
 project_brief.json
 project_settings.json
 script_bible.json

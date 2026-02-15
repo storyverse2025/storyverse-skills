@@ -104,12 +104,12 @@ Write `quality_feedback.json`:
   "content_evaluated": {
     "assets": [
       {
-        "asset_id": "bc_fu_si_nian",
+        "asset_id": "char_001",
         "asset_type": "character",
-        "file_path": "assets/bc_fu_si_nian.png",
-        "prompt_used": "A handsome Chinese businessman in his 30s...",
+        "file_path": "assets/characters/char_001_selected.png",
+        "prompt_used": "A young Chinese woman in her 20s...",
         "model_used": "flux-pro-1.1",
-        "generation_params": {"seed": 12345, "aspect_ratio": "9:16"},
+        "generation_params": {"seed": 12345, "aspect_ratio": "3:4"},
         "ratings": {
           "prompt_adherence": 4,
           "technical_quality": 5,
@@ -255,7 +255,7 @@ Write insights to `quality_insights.json`:
     "Use specific lighting terms (soft, dramatic, natural)",
     "Reference previous images for consistency"
   ],
-  "items_to_regenerate": ["bc_character_2", "scene_015", "beat_023"]
+  "items_to_regenerate": ["char_002", "scene_015", "frame_023"]
 }
 ```
 
@@ -292,11 +292,20 @@ POST /api/v1/projects/{project_id}/quality-feedback
 Body: quality_feedback.json content
 ```
 
+## Git Management
+
+After saving feedback and insights, commit:
+
+```bash
+git add quality_feedback.json quality_insights.json
+git commit -m "sv-judge - quality evaluation session"
+```
+
 ## Output Files
 
 - `quality_feedback.json` - Detailed feedback for this session
 - `quality_insights.json` - Aggregated insights and patterns
-- `regeneration_queue.json` - Items marked for regeneration
+- `regeneration_queue.json` - Items marked for regeneration (optional)
 
 ## Guidelines
 
@@ -308,6 +317,7 @@ Body: quality_feedback.json content
 - Respect user preferences and subjective judgment
 - Use visual inspection for image/video quality
 - Compare against reference materials when available
+- All file paths in JSON use relative paths from the project root
 
 ## Example Usage
 
