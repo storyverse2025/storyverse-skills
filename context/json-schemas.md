@@ -66,7 +66,10 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
     "language": "zh",
     "episode_count": 10,
     "episode_duration": 90,
-    "aspect_ratio": "9:16"
+    "aspect_ratio": "9:16",
+    "visual_style": "mvp",
+    "video_purpose": "story",
+    "style_playbook_id": "roar_of_steel"
   },
   "status": "draft",
   "current_step": 2,
@@ -85,6 +88,9 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
 | `settings.episode_count` | integer | yes | 1-100 |
 | `settings.episode_duration` | integer | yes | Seconds per episode |
 | `settings.aspect_ratio` | string | yes | "9:16" or "16:9" |
+| `settings.visual_style` | string | no | "mvp", "threed", "liveaction", "anime". Default "mvp" |
+| `settings.video_purpose` | string | no | "story", "commercial", "musicvideo", "educational". Default "story" |
+| `settings.style_playbook_id` | string | no | ID of a style playbook YAML file from `style_playbooks/` (e.g., "roar_of_steel"). When set, sv-shots and sv-system-script inject the playbook's cinematic style constraints into prompt generation. |
 | `status` | string | yes | "draft", "in_progress", "completed" |
 | `current_step` | integer | yes | Current pipeline step number |
 | `created_at` | string (ISO) | yes | Creation timestamp |
@@ -350,9 +356,23 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
           "video_url": "shots/episode_1/shot_001_selected.mp4",
           "image_url": "storyboard/episode_1/frame_001_selected.png",
           "status": "completed",
+          "failure_reason": null,
           "tool_used": "kling_o3_i2v",
+          "dialogue_stripped": false,
+          "quality_score": null,
+          "quality_issues": [],
           "versions": [
-            {"version": 1, "video_url": "shots/episode_1/shot_001_v1.mp4", "prompt": "...", "tool_used": "kling_o3_i2v", "selected": true}
+            {
+              "version": 1,
+              "video_url": "shots/episode_1/shot_001_v1.mp4",
+              "prompt": "...",
+              "tool_used": "kling_o3_i2v",
+              "dialogue_stripped": false,
+              "fallback_attempts": [],
+              "quality_score": null,
+              "quality_issues": [],
+              "selected": true
+            }
           ]
         }
       ]
@@ -379,8 +399,16 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
 | `shots[].video_url` | string | yes | Relative path to selected video |
 | `shots[].image_url` | string | yes | Relative path to source keyframe |
 | `shots[].status` | string | yes | "completed", "failed", "pending" |
+| `shots[].failure_reason` | string | no | `null` (success), `"content_moderation"`, `"quality"`, or `"api_error"` — classifies failure type |
 | `shots[].tool_used` | string | yes | I2V tool used for generation |
+| `shots[].dialogue_stripped` | boolean | no | `true` if dialogue was removed from prompt due to content moderation — dialogue preserved in `dialogue` field for `/sv-voice` |
+| `shots[].quality_score` | float | no | Average quality score (1.0-5.0), populated by `/sv-eval` |
+| `shots[].quality_issues` | string[] | no | Identified quality issues |
 | `shots[].versions` | array | no | All generated versions |
+| `shots[].versions[].dialogue_stripped` | boolean | no | `true` if this version was generated without dialogue in prompt |
+| `shots[].versions[].fallback_attempts` | array | no | Array of `{tier, strategy, model, result, error}` tracking content moderation fallback |
+| `shots[].versions[].quality_score` | float | no | Quality score for this version |
+| `shots[].versions[].quality_issues` | string[] | no | Quality issues for this version |
 
 ---
 

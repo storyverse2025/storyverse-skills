@@ -1,0 +1,123 @@
+# Style Playbook: ROAR OF STEEL
+# Genre: Hot-blooded action anime (Attack on Titan inspired)
+# Source: Issue #18 original exemplar
+
+id: roar_of_steel
+name: "ROAR OF STEEL — Hot-Blooded Action Anime"
+genre:
+  - action
+  - anime
+  - battle
+  - hot-blooded
+mood:
+  - intense
+  - desperate
+  - heroic
+  - explosive
+visual_style: anime
+pacing: 1s_cuts
+tone: "Hot-bloodedness, Despair, and Resurgence"
+
+description: |
+  Attack on Titan style anime motion comic. Fast tempo, cuts every second.
+  Three emotional beats: Hot-bloodedness → Despair → Resurgence.
+  Emphasize battle anime physics: smoke, steam, fire, shockwaves.
+
+intensity_curve: "tension → impact → aftershock"
+
+camera_phrase_whitelist:
+  - "High Aerial Top-Down"
+  - "Low Angle Up Shot"
+  - "Ultra Close-Up"
+  - "Close-Up"
+  - "Side Follow"
+  - "Fast Push-In"
+  - "Reaction Close-Up"
+  - "Wide Establishing"
+
+motion_carriers:
+  - "wall explosion debris"
+  - "massive steam gushing from armor"
+  - "high-pressure wind whipping hair"
+  - "red eye glow intensifying"
+  - "wire/cable dancing in air"
+  - "light explosion on sword slash"
+  - "steam column rising"
+  - "shockwave blowing soldiers"
+  - "speed lines"
+  - "fire and smoke trails"
+
+dialogue_density_rules:
+  max_lines_per_beat: 5
+  max_chars_per_beat: 180
+  on_screen_text_policy: "No subtitles. Convey emotion through dialogue and sound effects."
+  density_preference: low
+
+segment_pacing:
+  action_high: [2, 2, 2, 3, 3, 3]
+  dialogue_heavy: [3, 3, 3, 3, 3]
+  emotion_hold: [5, 5, 5]
+  balanced: [2, 3, 3, 3, 2, 2]
+
+consistency_rules:
+  - "Character facial features, hairstyles, clothing, and physique must be unified across all cuts."
+  - "Emphasize the flow of smoke, light, and wind moving like battle anime."
+  - "No subtitles. Convey emotion through dialogue and sound effects."
+
+export_recommendations:
+  fps: 30
+  bitrate: "22 Mbps"
+  audio: "48kHz stereo"
+  notes:
+    - "Maintain rhythm with cuts every second. Create anime-like speed."
+    - "Use effects like fire, smoke, steam, and slow motion."
+    - "All based on voice audio. No subtitles."
+  safety:
+    - "Battle in a fictional world. Violence depiction limited to stylized anime expression."
+
+reference_beats:
+  - beat_number: 1
+    generation_prompt: "ROAR STYLE: City Wall Attack. High tension battle start. Exploding walls and steam."
+    shot_plan:
+      - t: "00s-02s"
+        camera: "High Aerial Top-Down"
+        action: "The city wall explodes, the Iron Beast's arm protrudes violently. Soldiers are blown away by the shockwave."
+      - t: "03s-05s"
+        camera: "Side Follow"
+        action: "Kai draws his sword rapidly, his spiky hair dancing wildly in the high-pressure wind."
+      - t: "06s-08s"
+        camera: "Fast Push-In"
+        action: "The Iron Beast's red eyes glow intensely. Massive steam gushes out from its armor."
+      - t: "09s-12s"
+        camera: "Close-Up"
+        action: "Kai shoots wires, dancing aerially. Aya readies her rifle with precision."
+      - t: "13s-15s"
+        camera: "Wide Establishing"
+        action: "Sword slashes the beast's neck. Light explodes. Steam rises in a massive column."
+    dialogue: |
+      00s-02s: 【Kai / spiky black hair】: No way... the wall... it collapsed!?
+      03s-05s: 【Kai / spiky black hair】: Let's go! We have to stop it here!!
+      06s-08s: 【Iron Beast / glowing red eyes】: GWAAAAH!!
+      09s-12s: 【Aya / chestnut hair】: Kai! To the right! 【Kai / spiky black hair】: Leave it to me!
+      13s-15s: 【Kai / spiky black hair】: Don't underestimate humanity's pride!!
+
+  - beat_number: 2
+    generation_prompt: "ROAR STYLE: Aftermath Pledge. Sunset emotional beat. Red sky and drifting ash."
+    shot_plan:
+      - t: "00s-03s"
+        camera: "Low Angle Up Shot"
+        action: "Kai thrusts his sword into the ground amidst the rubble. Ash drifts in the red light."
+      - t: "04s-06s"
+        camera: "Close-Up"
+        action: "Aya stands up, wiping tears from her face. Her expression hardens."
+      - t: "07s-09s"
+        camera: "Medium Shot"
+        action: "The wind blows strongly, snapping their capes. They stand back-to-back in solidarity."
+      - t: "10s-15s"
+        camera: "High Aerial Top-Down"
+        action: "Camera rises to reveal countless Iron Beasts waiting beyond the crumbled wall."
+    dialogue: |
+      00s-03s: 【Kai / spiky black hair】: It's not over yet.
+      04s-06s: 【Aya / chestnut hair】: I won't let anyone else die.
+      07s-09s: 【Kai / spiky black hair】: Let's go, to the next battlefield. 【Aya / chestnut hair】: We will definitely... take it back!
+      10s-15s: 【Kai / spiky black hair】: Humanity's counterattack starts here!!

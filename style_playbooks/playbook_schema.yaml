@@ -1,0 +1,142 @@
+# Style Playbook Schema Reference
+# This file documents the required and optional fields for style playbook YAML files.
+# It is NOT a playbook itself — it is the schema definition.
+
+# --- Required Fields ---
+
+id: "unique_snake_case_id"
+# Unique identifier for this playbook. Used in project_settings.json as style_playbook_id.
+# Convention: lowercase snake_case, no spaces.
+
+name: "Human-Readable Display Name"
+# Display name shown to users when selecting a playbook.
+
+genre:
+  # List of genre tags for retrieval matching.
+  # Common values: action, romance, thriller, comedy, horror, fantasy, sci-fi, drama,
+  #   noir, psychological, battle, hot-blooded, cultivation, family, slice-of-life
+  - "genre_tag_1"
+  - "genre_tag_2"
+
+mood:
+  # List of mood/tone tags for retrieval matching.
+  # Common values: intense, calm, moody, cheerful, tense, romantic, atmospheric,
+  #   heroic, desperate, suspenseful, whimsical, dark, warm
+  - "mood_tag_1"
+  - "mood_tag_2"
+
+visual_style: "mvp"
+# Which visual_style pipeline this playbook is designed for.
+# Values: mvp | threed | liveaction | anime
+# Used to filter playbooks compatible with the project's visual_style setting.
+
+pacing: "2s_cuts"
+# Pacing descriptor. Values: 1s_cuts | 2s_cuts | 3s_cuts | mixed
+# Informs segment length defaults.
+
+tone: "Short phrase describing the emotional arc"
+# One-line description of the emotional progression.
+
+description: |
+  Multi-line description of the style.
+  Include visual references, cinematic influences, and key characteristics.
+
+intensity_curve: "tension → impact → aftershock"
+# The emotional intensity pattern per beat.
+# Common patterns:
+#   tension → impact → aftershock (action)
+#   suspense → shock → cold_resolve (thriller)
+#   warm → awkward → punchline (comedy)
+#   longing → connection → bittersweet (romance)
+
+# --- Camera & Motion ---
+
+camera_phrase_whitelist:
+  # Subset of SHOT_LANGUAGE_BANK_V1 tags preferred for this style.
+  # The VideoShot agent should prioritize these over the full bank.
+  # Available tags (from mvp_video_shot.md):
+  #   High Aerial Top-Down, Low Angle Up Shot, Ultra Close-Up, Close-Up,
+  #   Medium Close Shot, Medium Shot, Wide Establishing, Side Follow,
+  #   Slow Push-In, Fast Push-In, Reaction Close-Up, Static Hold
+  - "Camera Tag 1"
+  - "Camera Tag 2"
+
+motion_carriers:
+  # Visual motion elements that carry movement between cuts.
+  # Every segment should include at least one from this list.
+  - "fog drift"
+  - "rain streaks"
+  - "smoke trails"
+
+# --- Dialogue ---
+
+dialogue_density_rules:
+  max_lines_per_beat: 5
+  # Maximum spoken lines per 15s beat.
+  max_chars_per_beat: 180
+  # Maximum Chinese characters of dialogue per beat.
+  on_screen_text_policy: "Description of subtitle/text rules"
+  # Whether subtitles are allowed, and any on-screen text rules.
+  density_preference: "medium"
+  # Values: low | medium | high
+  # Guides how dialogue-heavy the generated shots should be.
+
+# --- Pacing ---
+
+segment_pacing:
+  # Preferred segment length patterns (in seconds) per rhythm class.
+  # Must sum to 15 (for 15s beats) or 12 (for 12s beats).
+  action_high: [2, 2, 2, 3, 3, 3]
+  dialogue_heavy: [3, 3, 3, 3, 3]
+  emotion_hold: [5, 5, 5]
+  balanced: [3, 3, 3, 3, 3]
+
+# --- Consistency ---
+
+consistency_rules:
+  # List of rules the VideoShot agent must follow for visual consistency.
+  - "Rule 1"
+  - "Rule 2"
+
+# --- Export ---
+
+export_recommendations:
+  fps: 30
+  audio: "48kHz stereo"
+  notes:
+    - "Export guidance note 1"
+    - "Export guidance note 2"
+
+# --- Reference Beats (at least 1 required) ---
+
+reference_beats:
+  # Gold-standard beat examples showing desired output structure.
+  # The VideoShot agent uses these as few-shot examples.
+  - beat_number: 1
+    generation_prompt: "STYLE_NAME STYLE: Short beat description."
+    shot_plan:
+      - t: "00s-03s"
+        camera: "Camera Tag"
+        action: "Detailed action description with character and motion carrier."
+      - t: "03s-06s"
+        camera: "Camera Tag"
+        action: "Next segment action."
+    dialogue: |
+      00s-03s: 【asset_identifier】: Dialogue line
+      03s-06s: 【asset_identifier】: Dialogue line
+
+# --- Optional Fields ---
+
+# safety:
+#   - "Content safety note"
+# Additional safety/moderation notes for this style.
+
+# color_palette:
+#   - "desaturated"
+#   - "high contrast"
+# Color guidance for the visual style.
+
+# keywords:
+#   - "additional"
+#   - "search terms"
+# Extra keywords for retrieval matching beyond genre/mood tags.

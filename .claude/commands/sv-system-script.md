@@ -13,8 +13,21 @@ $ARGUMENTS
 Read these files from the current directory:
 - `script_bible.json` — Episodes with full screenplays and beat markers
 - `assets.json` — Characters (base + variants), props, and environments with generation prompts and image URLs
-- `project_settings.json` — Language, aspect ratio, and global style guide
+- `project_settings.json` — Language, aspect ratio, global style guide, and visual style
 - `langsmith-prompts/mvp_system_script.md` — **MANDATORY** LangSmith prompt template for system script generation (defines beat structure, rhythm/dialogue-load tags, spatial continuity rules, and non-negotiable constraints)
+
+**Style Guidance**: Read `project_settings.json` → `settings.visual_style` and inject style-appropriate guidance into `GLOBAL_STYLE_GUIDANCE`:
+- `mvp` (or missing): "High-quality 2D animation — clean linework, controlled cel shading, painterly depth cues"
+- `threed`: "High-quality 3D animation — PBR materials, volumetric lighting, subsurface scattering, Unreal Engine 5 quality"
+- `liveaction`: "Photoreal live-action — film-quality lighting, real-world textures, DSLR quality, shallow DOF, film grain"
+- `anime`: "Anime/manga style — bold outlines, flat cel shading, vivid saturated colors, anime proportions, expressive eyes"
+
+**Style Playbook (optional)**: Check `project_settings.json` → `settings.style_playbook_id`:
+- If set, load the playbook YAML from `style_playbooks/{style_playbook_id}.yaml`
+- Use the playbook's `intensity_curve` to guide the emotional arc of each beat's `transition_to_next` and `action_description`
+- Use the playbook's `pacing` and `tone` to inform rhythm tag selection (e.g., `1s_cuts` → prefer `[RHYTHM:action_high]`)
+- Use the playbook's `consistency_rules` as additional constraints when writing `action_description`
+- If the playbook file is not found, warn and proceed without it
 
 If any prerequisite file is missing, tell the user which skill to run first (`/sv-script` for scripts, `/sv-assets` for casting).
 
