@@ -45,7 +45,14 @@ NOTE: You will NOT output `asset_definitions` in the final JSON; this step is us
 </step 1>
 
 <step 2>
-Structure the Narrative Beats: Break the Episode into a sequence of distinct beats, ensuring the entire original storyline is represented.
+Structure the Narrative Beats: Convert the Episode's beats into System Script beats, preserving the exact beat count from the Episode.
+
+Beat Count Enforcement (Hard, CRITICAL):
+• FIRST, count the number of beats in the Episode input (e.g., Beat 1 through Beat N means N beats).
+• You MUST produce at least N beats in your output. NEVER produce fewer beats than the Episode contains.
+• If the Episode has 8 beats, output at least 8 beats. If it has 10, output at least 10. If it has 12, output at least 12.
+• The only reason to produce MORE beats than the Episode is dialogue overflow splitting (see Dialogue Budget & Beat Split Rule below).
+• Producing fewer beats than the Episode is a critical error. Do NOT summarize, merge, or skip Episode beats.
 
 Beat Source Rule (Hard):
 • If Episode content already contains explicit Beat numbering (e.g., Beat 1...Beat N), you MUST follow it directly:
@@ -233,8 +240,10 @@ beats: List[Beat]
 * Episode Dialogue Authority (Hard): All dialogue text is finalized in Episode. System Script may only carry, normalize speaker formatting, and split across beats; it must not invent new dialogue or VO.
 * Beat Reference Images Restriction (Hard): For every beat, reference_img_urls MUST ONLY include asset-generated paths from the internal asset mapping (i.e., Casting entries' img_url, including base_characters/characters/props/environments). It MUST NEVER include any non-generated source path, including any Casting entry's reference_img_url or any external/raw images.
 
-* If no dialogue-driven split occurs, the number of beats in system_script.json must match the number of beats in the Episode.
-* If dialogue-driven split occurs, output beat count may be greater than Episode beat count, but never smaller and never out of order.
+* Beat Count Match (CRITICAL, Hard): The output beat count MUST be greater than or equal to the Episode's beat count. NEVER produce fewer beats than the Episode contains. Count the Episode beats first, then verify your output matches or exceeds that count.
+  - If no dialogue-driven split occurs, the number of beats in system_script.json must EXACTLY match the number of beats in the Episode.
+  - If dialogue-driven split occurs, output beat count may be greater than Episode beat count, but NEVER smaller and NEVER out of order.
+  - Producing only 3 beats when the Episode has 8+ beats is a critical failure. Every Episode beat must map to at least one output beat.
   </non-negotiable rules>
 
 ---
