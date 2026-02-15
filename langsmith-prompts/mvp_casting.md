@@ -15,7 +15,9 @@ and generating canonical assets that can be reused across the entire series.
 
 * episode.json: A JSON object containing multiple episodes (e.g., 30 episodes), including narrative content and asset mentions.
 * global_style_guide: JSON object defining the global visual and cinematic style.
+
 </input>
+
 
 <goal>
 Process all episodes to extract, normalize, and consolidate series-level assets,
@@ -89,7 +91,7 @@ For each unique character identity in the series, create exactly one BaseCharact
 
 * asset_id: stable identity id for the character base version
 * asset_identifier: concise but complete identity description (race/ethnicity, age range, hair, face vibe, signature features, default outfit if implied as canonical)
-* generation_prompt: cinematic full-body portrait prompt with neutral studio lighting and simple background
+* generation_prompt: cinematic 4-view character model sheet prompt on a neutral studio background
 * image_url: path for saving the generated base asset
 * continuity_episodes: all episodes where this character appears in any form
 
@@ -122,7 +124,7 @@ Extract all series-level props and consolidate them across episodes.
 For each Prop:
 
 * asset_identifier must clearly specify: material, era/style, color, size scale reference, condition (new/worn), and any distinctive markings
-* generation_prompt must be a product-style cinematic shot with realistic materials and clear silhouette
+* generation_prompt must be a product-style cinematic shot with stylized material rendering and clear silhouette
 * include continuity_episodes for every episode the prop appears in
 
 If a prop has multiple materially different states (e.g., intact vs broken, clean vs bloodied),
@@ -135,7 +137,7 @@ For each Environment:
 
 * asset_identifier must specify: location type, architectural style, time of day (if canonical), weather (if canonical),
 key layout features, dominant materials, and mood/atmosphere
-* generation_prompt must be a cinematic wide establishing shot capturing the environment’s key features
+* generation_prompt must be a cinematic wide establishing shot capturing the environment's key features
 * include continuity_episodes for every episode the environment appears in
 
 If the same environment has canonical distinct states (e.g., day vs night, normal vs destroyed),
@@ -145,20 +147,26 @@ create separate environment assets with different asset_ids.
 <step 8: Generation Prompt Construction (BaseCharacters)>
 For every BaseCharacter:
 
-* Must be a cinematic full-body portrait (head to toe), hands and feet visible (MANDATORY)
-* Neutral studio lighting, simple background, unobstructed face
+* Must be a SINGLE 4-view character model sheet (MANDATORY) that includes:
+  - front full-body view (head to toe, hands and feet visible)
+  - side full-body view (head to toe, hands and feet visible)
+  - back full-body view (head to toe, hands and feet visible)
+  - face close-up portrait (shoulders-up)
+* Neutral studio lighting, simple background, unobstructed face in the close-up tile
 * Clothing colors must strictly match asset_identifier
-* The prompt MUST explicitly include the character’s race/ethnicity using a specific category:
+* The prompt MUST explicitly include the character's race/ethnicity using a specific category:
   White, Black, Asian, Hispanic, Latino, Native American, Pacific Islander, Middle Eastern
 * Avoid accessories that block facial visibility (no glasses, no masks, no headgear)
-* Include realistic fabric textures and wardrobe construction details suitable for production continuity
+* Include stylized fabric rendering and wardrobe construction details suitable for production continuity
+* The prompt must explicitly describe a clear 2x2 grid layout and label the four tiles by role:
+  front view, side view, back view, face close-up
 
 </step 8>
 
 <step 9: Generation Prompt Construction (Props)>
 For every Prop:
 
-* Cinematic product shot, centered composition, clear silhouette, realistic PBR materials
+* Cinematic product shot, centered composition, clear silhouette, stylized material rendering
 * Include scale cues without introducing people (no humans)
 * Emphasize texture, wear-and-tear, brand/markings if described
 * Simple background, controlled lighting for accurate material read
@@ -181,7 +189,7 @@ the stylistic elements from global_style_guide, including:
 * lighting approach and contrast
 * color grading / palette guidance
 * lens / camera / framing preferences if provided
-* rendering style constraints (e.g., 2D animation look, realism level, texture sharpness)
+* rendering style constraints (e.g., high-quality 2D animation look, cel-shading control, texture clarity)
 
 Characters generation_prompt is delta-only and must be phrased as an edit instruction; identity and style are anchored by reference_image_url + global_style_guide.
 </step 11>
@@ -216,24 +224,28 @@ Field rules:
 * Continuity Episodes: Every asset MUST include continuity_episodes listing all episodes where it appears. Merge episode appearances across the whole series.
 
 * BaseCharacter Prompt Baseline:
-  BaseCharacters must be cinematic full-body portrait shots with neutral studio lighting, simple background, unobstructed face.
+  BaseCharacters must be single-image 4-view model sheets with neutral studio lighting and simple background:
+  front full-body, side full-body, back full-body, and face close-up.
 * Characters Prompt Baseline:
   Characters generation_prompt MUST be delta-only (ONLY the changes vs BaseCharacter: clothing / hair / makeup / accessories / condition) AND must use explicit edit wording.
   It MUST explicitly state that only the listed changes should happen and everything else must remain unchanged.
   Do NOT restate identity traits, race/ethnicity, face, body, camera, lens, framing, lighting, background, or global style text.
 
 * Race/Ethnicity Must Be Explicit:
-  BaseCharacters generation_prompt MUST explicitly include the character’s race/ethnicity using one of:
+  BaseCharacters generation_prompt MUST explicitly include the character's race/ethnicity using one of:
   White, Black, Asian, Hispanic, Latino, Native American, Pacific Islander, Middle Eastern.
 
 * Clothing Color Fidelity: Clothing colors MUST strictly match asset_identifier for every character variant.
 * No Face-Blocking Accessories: No glasses, no masks, no headgear; face must be clear and unobstructed.
-* Full Body Requirement (MANDATORY): All BaseCharacters MUST be head-to-toe full-body shots with hands and feet visible.
+* 4-View Model Sheet Requirement (MANDATORY): All BaseCharacters MUST be one image containing four tiles:
+  front full-body, side full-body, back full-body, and face close-up.
+* Full Body Tiles Requirement (MANDATORY): In the three body tiles (front/side/back), each character MUST be head-to-toe with hands and feet visible.
 * Environment Must Be Empty: All environments MUST be completely empty of people; always include negative prompts:
   no people, no humans, no characters.
 * Quote Restriction: In generation prompts, do NOT use single quotes ('') or double quotes ("") to wrap text.
 * Global Style Injection: Every generation_prompt MUST incorporate the stylistic elements from global_style_guide to ensure unified cinematic tone, lighting, and color grading.
 * Max 5 Props: The props list MUST contain at most 5 items. Prioritize the top 5 most frequent or narratively significant props and discard the rest.
+* 2D Animation Rendering Rule (Hard): Prompts must target high-quality 2D animation rendering (clean linework, controlled cel shading, painterly depth cues). Do not request photoreal live-action imagery.
 </non-negotiable rules>
 
 
@@ -246,4 +258,3 @@ The episodes are: {EPISODES}.
 The global_style_guide is: {GLOBAL_STYLE_GUIDE}
 
 ---
-
