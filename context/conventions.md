@@ -171,6 +171,40 @@ Structure I2V prompts as:
 [Emotional tone]
 ```
 
+## I2V Model Content Sensitivity & Fallback Priority
+
+Different I2V models have different content moderation thresholds. When a model blocks content, fall back to a less restrictive model.
+
+### Content-Sensitivity Order (most restrictive → least restrictive)
+
+| Rank | Model | Content Strictness | Notes |
+|------|-------|-------------------|-------|
+| 1 (strictest) | `sora2_i2v` | Very strict | Blocks death, blood, violence, age references, and reference images with violent content |
+| 2 | `kling_o3_pro_i2v` | Strict | Similar to Sora but slightly more permissive |
+| 3 | `kling_o3_i2v` | Moderate | Handles most narrative content; may block extreme violence |
+| 4 (most permissive) | `grok_imagine_i2v` | Permissive | Most lenient content policy; best fallback for censored content |
+
+### Content Moderation Fallback Chain
+
+When a shot fails due to content moderation, apply this 3-tier strategy (see `sv-shots` Step 6.2 for full details):
+
+1. **Tier 1 — Prompt Sanitization**: Replace sensitive words using the I2V substitution table (same model)
+2. **Tier 2 — Dialogue Stripping**: Remove dialogue from prompt; generate visual-only video (same model)
+3. **Tier 3 — Model Switch**: Fall back to less restrictive model in the order above
+
+### Default Fallback Chains by Starting Model
+
+| Starting Model | Fallback Order |
+|---|---|
+| `sora2_i2v` | → `kling_o3_i2v` → `grok_imagine_i2v` |
+| `kling_o3_i2v` | → `grok_imagine_i2v` → `kling_o3_pro_i2v` |
+| `kling_o3_pro_i2v` | → `kling_o3_i2v` → `grok_imagine_i2v` |
+| `grok_imagine_i2v` | → `kling_o3_i2v` → `kling_o3_pro_i2v` |
+
+### Dialogue-Stripped Shots
+
+When `dialogue_stripped: true`, the video was generated without dialogue in the I2V prompt. The original dialogue is preserved in the shot's `dialogue` field and must be added back via `/sv-voice` as a separate audio track.
+
 ## Backend API Data Flow
 
 When calling backend APIs, always **re-read the JSON state file** immediately before making the API call. This ensures that any external modifications the user made to JSON files (outside of Claude Code) are picked up and sent to the backend. The JSON file is the source of truth for each pipeline step.
@@ -180,6 +214,38 @@ Pattern:
 2. Use its contents to construct the API request body
 3. Make the API call
 4. Update the JSON file with any response data (e.g., IDs, URLs)
+
+---
+
+## Style Playbooks
+
+Style playbooks are curated cinematic style exemplars stored as YAML files in `style_playbooks/`.
+
+### Directory Structure
+```
+style_playbooks/
+├── playbook_schema.yaml          # Schema reference (not a playbook itself)
+├── roar_of_steel.yaml            # Hot-blooded action anime
+├── wanpu_noir_loop.yaml          # Psychological thriller noir
+└── {new_playbook_id}.yaml        # Add new playbooks here
+```
+
+### Playbook ID Convention
+- **Format**: `lowercase_snake_case` (e.g., `roar_of_steel`, `wanpu_noir_loop`)
+- **Filename**: `{playbook_id}.yaml`
+- **Referenced by**: `project_settings.json` → `settings.style_playbook_id`
+
+### Required Fields
+Each playbook YAML must include: `id`, `name`, `genre` (tags), `mood` (tags), `visual_style`, `pacing`, `tone`, `description`, `intensity_curve`, `camera_phrase_whitelist`, `motion_carriers`, `dialogue_density_rules`, `segment_pacing`, `consistency_rules`, `export_recommendations`, `reference_beats` (at least 1).
+
+See `style_playbooks/playbook_schema.yaml` for the complete field reference.
+
+### Retrieval
+The `utils/style_retriever.py` module provides `StylePlaybookRetriever` for loading and querying playbooks by genre, mood, visual_style, and keywords.
+
+### Integration Points
+- **sv-system-script**: Uses playbook's `intensity_curve`, `pacing`, and `tone` to guide beat structuring
+- **sv-shots**: Uses playbook's `camera_phrase_whitelist`, `motion_carriers`, `segment_pacing`, `dialogue_density_rules`, and `reference_beats` to constrain prompt generation
 
 ---
 

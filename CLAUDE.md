@@ -111,6 +111,7 @@ Each skill produces a JSON state file consumed by subsequent skills:
 | `quality_insights.json` | sv-judge | — |
 | `consistency_report.json` | sv-consistency | — |
 | `pipeline_state.json` | sv-pipeline | sv-pipeline (resume) |
+| `style_playbooks/*.yaml` | manual / sv-issue | sv-shots, sv-system-script |
 
 For complete JSON schemas with all fields, see `context/json-schemas.md`.
 
@@ -188,6 +189,7 @@ When calling backend APIs, always **re-read the JSON state file** immediately be
 | `context/workflow-overview.md` | Pipeline flow, step dependencies, directory structure |
 | `context/mcp-tools-reference.md` | MCP tool signatures for image/video generation |
 | `context/backend-api-reference.md` | Backend API endpoints and request formats |
+| `style_playbooks/playbook_schema.yaml` | Style playbook YAML schema reference |
 
 ---
 

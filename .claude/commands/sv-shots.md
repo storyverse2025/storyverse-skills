@@ -16,6 +16,21 @@ Read these files from the current directory:
 - `assets.json` — Character and scene references (for IDs)
 - `langsmith-prompts/mvp_video_shot.md` — **MANDATORY** LangSmith prompt template for video shot generation (defines prompt structure and non-negotiable rules)
 
+**Prompt Routing**: Read `project_settings.json` → `settings.visual_style` to determine which video shot prompt to use:
+- `mvp` (or missing) → `langsmith-prompts/mvp_video_shot.md`
+- `threed` → `langsmith-prompts/threed_video_shot.md`
+- `liveaction` → `langsmith-prompts/liveaction_video_shot.md`
+- `anime` → `langsmith-prompts/anime_video_shot.md`
+
+Read the selected prompt template:
+- `langsmith-prompts/{style}_video_shot.md` — **MANDATORY** LangSmith prompt template for video shot generation (defines prompt structure and non-negotiable rules)
+
+**Style Playbook (optional)**: Check `project_settings.json` → `settings.style_playbook_id`:
+- If set, load the playbook YAML from `style_playbooks/{style_playbook_id}.yaml`
+- The playbook provides style-specific overrides for camera phrases, motion carriers, pacing, dialogue density, and reference beat examples
+- See `style_playbooks/playbook_schema.yaml` for the full field reference
+- If the playbook file is not found, warn the user and proceed without it
+
 If any prerequisite file is missing, tell the user which skill to run first.
 
 ## MCP Tools Available
@@ -131,6 +146,24 @@ For each storyboard frame, extract or select the single-panel reference:
 3. **Record** the `reference_frame` path for each shot (used in Step 4 and saved in `shots.json`)
 
 **Key principle**: Grid images are still used for prompt crafting (they provide multi-panel visual context), but are **NOT** passed as `image_url` to the I2V tool. Only single-panel extracted frames are used as I2V references.
+
+### 1.8. Load Style Playbook (if configured)
+
+If `project_settings.json` → `settings.style_playbook_id` is set:
+
+1. **Load** the playbook YAML from `style_playbooks/{style_playbook_id}.yaml`
+2. **Extract style constraints** to apply during prompt generation (Step 2):
+   - **Camera phrase whitelist**: Use `camera_phrase_whitelist` from the playbook as the preferred camera tags. These override the default Camera Library — prioritize playbook camera tags, but fall back to the full SHOT_LANGUAGE_BANK_V1 if needed.
+   - **Motion carriers**: Use `motion_carriers` from the playbook as the required motion elements per segment. Every segment MUST include at least one from this list.
+   - **Segment pacing**: Use `segment_pacing` overrides for the beat's rhythm class (action_high, dialogue_heavy, emotion_hold, balanced) instead of the default segment patterns.
+   - **Dialogue density**: Apply `dialogue_density_rules` (max lines, max chars, density preference).
+   - **Consistency rules**: Include `consistency_rules` as additional constraints in the EXPORT section.
+   - **Reference beat**: Use the first `reference_beats` entry as a few-shot example when crafting the SHOT_PLAN structure.
+3. **Inject into generation prompt**: When writing the EXPORT section, prepend: `Style: {playbook.name}. ` followed by the playbook's tone and intensity curve. When writing SHOT_PLAN, prefer playbook camera tags and motion carriers.
+
+**Important**: Style playbook guidance is additive — it does NOT override LangSmith template non-negotiable rules. All hard rules (segment sums, character-action clauses, prompt length limits, etc.) still apply.
+
+If no `style_playbook_id` is configured, skip this step entirely — the default behavior is unchanged.
 
 ### 2. Craft Generation Prompts (LangSmith Template Format)
 
@@ -287,7 +320,9 @@ Write `shots.json` (see `context/json-schemas.md` for full field reference):
           "image_url": "storyboard/episode_1/frame_001_selected.png",
           "reference_frame": "storyboard/episode_1/frame_001_extracted.png",
           "status": "completed",
+          "failure_reason": null,
           "tool_used": "kling_o3_i2v",
+          "dialogue_stripped": false,
           "quality_score": null,
           "quality_issues": [],
           "versions": [
@@ -297,8 +332,10 @@ Write `shots.json` (see `context/json-schemas.md` for full field reference):
               "prompt": "GOAL: ... SHOT_PLAN: ... DIALOGUE: ... EXPORT: ... VISUAL_PROMPT: ...",
               "tool_used": "kling_o3_i2v",
               "reference_frame": "storyboard/episode_1/frame_001_extracted.png",
+              "dialogue_stripped": false,
               "quality_score": null,
               "quality_issues": [],
+              "fallback_attempts": [],
               "timestamp": "2026-02-15T10:30:00Z",
               "selected": true
             }
@@ -314,7 +351,13 @@ Write `shots.json` (see `context/json-schemas.md` for full field reference):
 - `reference_frame`: Path to the single-panel image used as I2V reference (not the grid)
 - `quality_score`: Float (1.0-5.0), populated by `/sv-eval` — null until evaluated
 - `quality_issues`: String array of identified quality issues — empty until evaluated
+- `dialogue_stripped`: Boolean — `true` if dialogue was removed from prompt due to content moderation (dialogue preserved in shot-level `dialogue` field for `/sv-voice`)
+- `fallback_attempts`: Array of `{tier, strategy, model, result, error}` objects tracking content moderation fallback attempts — empty if no fallback was needed
 - `timestamp`: ISO 8601 timestamp of generation
+
+**Shot-level fields for failure tracking:**
+- `failure_reason`: `null` (success), `"content_moderation"`, `"quality"`, or `"api_error"` — classifies why the shot failed (see Step 6.1)
+- `dialogue_stripped`: Boolean — `true` if the selected version was generated without dialogue in the prompt
 
 ### 5.5. Quality Evaluation (Auto-Eval)
 
@@ -337,10 +380,82 @@ Save evaluation results in `shot_evaluation.json` alongside `shots.json`.
 
 ### 6. Handle Failures
 
-- If a shot fails, record `status: "failed"` with the error message
-- Offer to retry with a different tool. Fallback priority: Kling O3 (MCP) → Grok (fal) → Sora2 (fal) → Kling (fal)
-- Offer to adjust the prompt and regenerate
-- Failed shots don't get a version entry
+When a shot generation fails, classify the failure and apply the appropriate recovery strategy.
+
+#### 6.1 Failure Classification
+
+Inspect the error response to classify the failure:
+
+| Failure Type | Error Patterns | `failure_reason` |
+|---|---|---|
+| **Content moderation** | "content policy", "moderation", "safety filter", "blocked", "violat", "inappropriate", "censored", "NSFW" | `content_moderation` |
+| **Quality / generation** | "quality", "distort", timeout without error, generation succeeded but visual inspection fails | `quality` |
+| **API / infrastructure** | "rate limit", "timeout", "500", "503", "quota", "unavailable" | `api_error` |
+
+Record `failure_reason` in the shot entry alongside `status: "failed"`.
+
+#### 6.2 Content Moderation Fallback (3-Tier)
+
+When `failure_reason` is `content_moderation`, apply this tiered fallback **before** offering manual retry:
+
+**Tier 1 — Prompt Sanitization (same model)**:
+1. Apply the sensitive-word substitution table to the `generation_prompt`:
+   - Strip or replace death/violence/blood/age references in DIALOGUE, SHOT_PLAN, and VISUAL_PROMPT blocks
+   - Replace graphic action descriptions with neutral alternatives
+   - Keep the overall GOAL → SHOT_PLAN → DIALOGUE → EXPORT → VISUAL_PROMPT structure intact
+2. Record the sanitized prompt as `sanitized_prompt` in the version entry
+3. Retry with the same model using the sanitized prompt
+
+**Sensitive-Word Substitution Table (I2V prompt level):**
+
+| Sensitive Pattern (zh) | Replacement (zh) | Sensitive Pattern (en) | Replacement (en) |
+|---|---|---|---|
+| 死亡 / 死 / 断气 / 身亡 | 倒下 / 失去意识 | death / die / dying / dead | collapse / lose consciousness |
+| 杀 / 击杀 / 杀害 | 击倒 / 制伏 | kill / murder / slay | defeat / subdue |
+| 血 / 流血 / 鲜血 | 伤痕 / 痕迹 | blood / bleeding / bloody | marks / traces |
+| 自杀 / 轻生 | 陷入绝望 | suicide / self-harm | fall into despair |
+| 窒息 / 勒死 | 呼吸困难 | suffocate / strangle | struggle to breathe |
+| 被车撞 / 车祸 | 意外冲击 | hit by car / car crash | sudden impact |
+| 删除键 (metaphorical death) | 重置 | delete key (metaphorical) | reset |
+| 未成年 / X岁以下 (age < 21) | (omit age reference) | underage / minor / under 21 | (omit age reference) |
+| 绑架 / 囚禁 / 虐待 | 控制 / 困住 | kidnap / captive / torture | restrain / trap |
+
+**Tier 2 — Dialogue-less Generation (same or next model)**:
+1. Remove the entire DIALOGUE block content from the generation prompt (replace with `DIALOGUE: [no dialogue — visual only]`)
+2. Set `dialogue_stripped: true` in the version entry
+3. Retry generation — the video will be visual-only
+4. The stripped dialogue is preserved in the shot's top-level `dialogue` field for `/sv-voice` to add back as a separate audio track later
+
+**Tier 3 — Model Switch to less restrictive model**:
+1. Rotate to next model in the content-sensitivity-aware fallback order:
+   - If original was `sora2_i2v` → try `kling_o3_i2v` → `grok_imagine_i2v`
+   - If original was `kling_o3_i2v` → try `grok_imagine_i2v` → `kling_o3_pro_i2v`
+   - If original was any model → `grok_imagine_i2v` is the final fallback (most permissive)
+2. Use the best prompt from Tier 1/2 (sanitized or dialogue-stripped)
+3. Adapt tool parameters to the new model's API (e.g., Sora only supports duration 4/8/12)
+
+**Track all fallback attempts** in the version's `fallback_attempts` array:
+```json
+"fallback_attempts": [
+  {"tier": 1, "strategy": "prompt_sanitization", "model": "sora2_i2v", "result": "failed", "error": "content policy"},
+  {"tier": 2, "strategy": "dialogue_stripped", "model": "sora2_i2v", "result": "failed", "error": "content policy"},
+  {"tier": 3, "strategy": "model_switch", "model": "kling_o3_i2v", "result": "success"}
+]
+```
+
+#### 6.3 Quality / API Failure Handling
+
+For non-moderation failures, use the existing retry strategy:
+- **Quality failures**: Follow Step 5.5 auto-eval retry (prompt → reference frame → model switch)
+- **API errors**: Wait and retry with exponential backoff; if persistent, switch to a different model/provider
+
+#### 6.4 Final Failure
+
+If all 3 tiers fail for a content-moderation shot:
+- Record `status: "failed"` with `failure_reason: "content_moderation"` and the full `fallback_attempts` log
+- Post a clear message to the user explaining which models were tried and why they all failed
+- Suggest returning to `/sv-system-script` or `/sv-script` to rewrite the sensitive beat
+- Offer manual prompt editing as a last resort
 
 ### 7. Present Results
 
@@ -379,7 +494,9 @@ git commit -m "step 6: sv-shots - regenerate shot_003 v2"
 ## After Completion
 
 - If auto-eval ran and all shots passed: suggest running `/sv-voice` to add character voices, or `/sv-edit` to skip voice and go straight to editing.
+- If any shots have `dialogue_stripped: true`: **strongly recommend** running `/sv-voice` — these shots need dialogue added back as separate audio tracks since the I2V model could not handle the dialogue in-prompt.
 - If auto-eval found persistent failures: suggest running `/sv-eval` for deeper analysis, or returning to `/sv-storyboard` to regenerate keyframes for problem shots.
+- If content moderation failures persist after all fallback tiers: suggest returning to `/sv-script` or `/sv-system-script` to rewrite the sensitive beats.
 - To run a standalone quality evaluation at any time: use `/sv-eval`.
 
 ## Guidelines
@@ -388,7 +505,8 @@ git commit -m "step 6: sv-shots - regenerate shot_003 v2"
 - If `$ARGUMENTS` specifies an episode number, only generate shots for that episode
 - Keep shot durations between 3-8 seconds for short drama pacing
 - Use Kling O3 as the default MCP tool; when falling back to fal API, prefer Grok over Kling (grok is faster and more reliable via fal)
-- Monitor for moderation blocks — adjust prompts if content is flagged
+- **Content moderation fallback**: When a model blocks content, follow the 3-tier fallback in Step 6.2 (sanitize prompt → strip dialogue → switch model). Content-sensitivity model order: `grok_imagine_i2v` (most permissive) > `kling_o3_i2v` > `kling_o3_pro_i2v` > `sora2_i2v` (most restrictive)
+- When `dialogue_stripped: true`, always flag the shot for `/sv-voice` to re-add dialogue as a separate audio track
 - Always download generated videos locally and use relative paths
 - The `storyboard_frame_id` links each shot to its source keyframe for traceability
 - **Grid retry**: If video quality is poor for a shot, check `storyboard.json` — the frame likely has other grid variants (1, 4, 6, 9) already generated. Suggest switching to a different grid layout via `/sv-storyboard` before regenerating the video. Higher grid counts (6, 9) generally improve continuity for action beats; lower counts (1, 4) improve visual clarity for dialogue and close-ups.

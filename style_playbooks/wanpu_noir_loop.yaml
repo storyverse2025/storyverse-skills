@@ -1,0 +1,102 @@
+# Style Playbook: WANPU NOIR LOOP
+# Genre: Psychological thriller / noir anime (Death Note × Re:Zero × Psycho-Pass)
+# Source: Issue #18 comment by @jesseaifilm
+
+id: wanpu_noir_loop
+name: "WANPU NOIR LOOP — Psychological Thriller Noir"
+genre:
+  - thriller
+  - noir
+  - mystery
+  - psychological
+mood:
+  - tense
+  - moody
+  - atmospheric
+  - suspenseful
+visual_style: anime
+pacing: 2s_cuts
+tone: "Suspense → Shock → Cold Resolve"
+
+description: |
+  Death Note × Re:Zero × Psycho-Pass anime style. Psychological thriller motion comic.
+  Fast tempo, cuts every 2 seconds. Three beats: Suspense → Shock → Cold Resolve.
+  Noir framing with heavy negative space, off-center composition, harsh rim light.
+
+intensity_curve: "suspense → shock → cold_resolve"
+
+camera_phrase_whitelist:
+  - "Close-Up"
+  - "Ultra Close-Up"
+  - "Wide Establishing"
+  - "Side Follow"
+  - "Slow Push-In"
+  - "Reaction Close-Up"
+  - "Low Angle Up Shot"
+  - "Static Hold"
+  - "Medium Close Shot"
+
+motion_carriers:
+  - "fog drift"
+  - "rain streak direction"
+  - "light flares"
+  - "screen glow"
+  - "crimson fabric snapping in wind"
+  - "gray haze between characters"
+  - "handheld jitter"
+  - "split-screen slide"
+  - "cigarette smoke"
+
+dialogue_density_rules:
+  max_lines_per_beat: 3
+  max_chars_per_beat: 120
+  on_screen_text_policy: "Clean UI overlays allowed for system moments only. No dialogue subtitles."
+  density_preference: low
+
+segment_pacing:
+  action_high: [2, 2, 2, 2, 2, 2]
+  dialogue_heavy: [3, 3, 3, 3, 3]
+  emotion_hold: [4, 4, 4, 3]
+  balanced: [2, 2, 2, 3, 3, 3]
+
+consistency_rules:
+  - "Character facial features, hairstyles, clothing, and physique must be unified across all cuts."
+  - "Emphasize continuity physics across cuts: fog drift, rain streak direction, light flares, screen glow."
+  - "Use noir framing: heavy negative space, off-center composition, harsh rim light, dramatic eye close-ups."
+  - "System moments use clean UI overlays, but no dialogue subtitles."
+  - "Camera work must be handheld/dynamic, never static tripod."
+  - "No music. Convey emotion with SFX and short VO lines only."
+
+export_recommendations:
+  fps: 30
+  audio: "Stereo 48kHz"
+  notes:
+    - "Animation priority: Clarity + velocity."
+    - "Noir rule: blacks deep, highlights sharp, heavy negative space."
+    - "Keep physics continuity across cuts (fog/rain/light direction)."
+    - "No music; rely on SFX + short VO."
+
+reference_beats:
+  - beat_number: 6
+    generation_prompt: "NOIR STYLE: Diagonal standoff, emergence glow, red vs gray, fog carries motion."
+    shot_plan:
+      - t: "00s-02s"
+        camera: "Side Follow"
+        action: "Camera whips from empty fog to the man looking right-up. Fog trails follow the whip direction."
+      - t: "02s-04s"
+        camera: "Reaction Close-Up"
+        action: "Camera snaps to the woman forming in glow. Crimson fabric snaps in an invisible wind."
+      - t: "04s-06s"
+        camera: "Ultra Close-Up"
+        action: "Camera tilts close on the man's clenched jaw. Handheld jitter tightens the space."
+      - t: "06s-08s"
+        camera: "Wide Establishing"
+        action: "Camera split-slides them to opposite corners. Diagonal eyelines connect across gray haze."
+      - t: "08s-10s"
+        camera: "Close-Up"
+        action: "Camera whips over his shoulder toward her face. Fog streams between them like a barrier."
+      - t: "10s-12s"
+        camera: "Wide Establishing"
+        action: "Camera pulls wide as the glow stabilizes. Fog drift continues, sealing the standoff."
+    dialogue: |
+      00s-12s: 【a Chinese man in gray shirt】: 我悲伤质问她，也只得到一句无关痛痒的解释：
