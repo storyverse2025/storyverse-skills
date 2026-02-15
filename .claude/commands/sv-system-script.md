@@ -51,6 +51,7 @@ Map all casting assets from `assets.json` for beat-level referencing:
 ### 2. Structure Narrative Beats
 
 Follow the beat structuring rules defined in `langsmith-prompts/mvp_system_script.md`. Key updates from LangSmith template:
+- **Beat count must match episode (CRITICAL)**: Count the beats in the episode script FIRST. The system_script.json must have at least that many beats. NEVER produce fewer beats than the episode contains. If the episode has 8 beats, output at least 8 beats — not 3, not 5.
 - **15-second beats** (not 12s): Every beat is exactly 15 seconds duration
 - **Rhythm tags**: Every beat must include `[RHYTHM:action_high|dialogue_heavy|emotion_hold|balanced]` in `transition_to_next`
 - **Dialogue-load tags**: Every beat must include `[DIALOGUE_LOAD:low|medium|high|overflow]` in `transition_to_next`
@@ -212,7 +213,7 @@ These rules are hard constraints that must never be violated:
 - **Reference images only from assets**: `reference_img_urls` must only contain paths from generated assets, never raw source images.
 - **Unique clothing colors**: No two characters may share the same primary clothing color.
 - **Sub-location requirement**: If the story occurs in one location, create at least 3 sub-locations.
-- **Beat count matches script**: The number of beats must match the narrative beats in the episode script.
+- **Beat count matches script (CRITICAL)**: The number of beats in system_script.json must be >= the number of beats in the episode script. NEVER produce fewer beats. Count the episode beats first, then verify your output matches or exceeds that count. Producing only 3 beats when the episode has 8+ is a critical failure.
 
 ## Guidelines
 
