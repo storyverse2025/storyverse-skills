@@ -14,8 +14,9 @@ Read these files from the current directory:
 - `script_bible.json` — Script with episodes and screenplays
 - `project_settings.json` — Project configuration (aspect ratio, language)
 - `project_brief.json` — For visual style reference
+- `langsmith-prompts/mvp_casting.md` — **MANDATORY** LangSmith prompt template for casting/asset generation (defines 4-bucket output structure, character model sheet format, and non-negotiable rules)
 
-If any file is missing, tell the user which skill to run first.
+If any prerequisite file is missing, tell the user which skill to run first.
 
 ## MCP Tools Available
 
@@ -33,6 +34,13 @@ You have access to StoryVerse MCP image generation tools. Read `context/mcp-tool
 ## Procedure
 
 ### 1. Extract Assets from Script
+
+Follow the asset extraction, classification, and prompt construction rules defined in `langsmith-prompts/mvp_casting.md`. Key rules:
+- **4-bucket output**: base_characters, characters (variants), props (max 5), environments
+- **BaseCharacters**: 4-view model sheet (front/side/back/face close-up), 2D animation rendering, explicit race/ethnicity
+- **Characters (variants)**: delta-only prompts referencing BaseCharacter, explicit edit wording
+- **Environments**: must be completely empty of people
+- **Global style injection**: every prompt must incorporate global_style_guide
 
 Parse the screenplay content from each episode in `script_bible.json` to identify:
 

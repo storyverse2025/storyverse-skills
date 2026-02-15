@@ -13,8 +13,10 @@ $ARGUMENTS
 Read these files from the current directory:
 - `project_brief.json` — Story inspiration and extracted elements
 - `project_settings.json` — Project configuration (language, episodes, etc.)
+- `langsmith-prompts/mvp_episode_outline.md` — **MANDATORY** LangSmith prompt template for episode outline generation (defines pacing strategy, event extraction, and non-negotiable rules)
+- `langsmith-prompts/mvp_episode.md` — **MANDATORY** LangSmith prompt template for episode script generation (defines beat decomposition, dialogue rules, and compliance validation)
 
-If either file is missing, tell the user which skill to run first (`/sv-intake` or `/sv-plan`).
+If `project_brief.json` or `project_settings.json` is missing, tell the user which skill to run first (`/sv-intake` or `/sv-plan`).
 
 ## Procedure
 
@@ -35,7 +37,9 @@ Body: {
 
 ### Option B: Direct Generation (default)
 
-Generate the script bible directly using your capabilities:
+Generate the script bible directly using your capabilities. You **MUST** follow the rules and structure defined in the LangSmith prompt templates:
+- **Phase 1 (Episode Outline)**: Follow `langsmith-prompts/mvp_episode_outline.md` for event extraction, intensity scoring, episode splitting strategy, and output format. Key rules: 8-12 beats per episode, contiguous event slices, every episode ends with a hook, source_text must be verbatim.
+- **Phase 2 (Episode Scripts)**: Follow `langsmith-prompts/mvp_episode.md` for beat decomposition, dialogue preservation, pacing rules, and compliance validation. Key rules: one key point + one location per beat, 3-6 action lines per beat, source dialogue preserved verbatim, hard compliance validator before output.
 
 1. **Create a title**: Use the title from `project_settings.json` or derive one from the story.
 

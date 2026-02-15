@@ -14,8 +14,9 @@ Read these files from the current directory:
 - `script_bible.json` — Episodes with full screenplays and beat markers
 - `assets.json` — Characters (base + variants), props, and environments with generation prompts and image URLs
 - `project_settings.json` — Language, aspect ratio, and global style guide
+- `langsmith-prompts/mvp_system_script.md` — **MANDATORY** LangSmith prompt template for system script generation (defines beat structure, rhythm/dialogue-load tags, spatial continuity rules, and non-negotiable constraints)
 
-If any file is missing, tell the user which skill to run first (`/sv-script` for scripts, `/sv-assets` for casting).
+If any prerequisite file is missing, tell the user which skill to run first (`/sv-script` for scripts, `/sv-assets` for casting).
 
 ## Pipeline Position
 
@@ -49,18 +50,26 @@ Map all casting assets from `assets.json` for beat-level referencing:
 
 ### 2. Structure Narrative Beats
 
-Break each episode into sequential beats. Each beat = 12 seconds of screen time.
+Follow the beat structuring rules defined in `langsmith-prompts/mvp_system_script.md`. Key updates from LangSmith template:
+- **15-second beats** (not 12s): Every beat is exactly 15 seconds duration
+- **Rhythm tags**: Every beat must include `[RHYTHM:action_high|dialogue_heavy|emotion_hold|balanced]` in `transition_to_next`
+- **Dialogue-load tags**: Every beat must include `[DIALOGUE_LOAD:low|medium|high|overflow]` in `transition_to_next`
+- **No supplementary dialogue**: Do NOT add any supplementary VO or dialogue lines — only preserve original script dialogue
+- **15s beat arc**: Each beat must contain setup → escalation → aftershock mini-arc
+- **Dialogue target**: 3-5 lines per beat, 80-180 Chinese chars; split if >220 chars
+
+Break each episode into sequential beats. Each beat = 15 seconds of screen time.
 
 **Beat source rule:**
 - If the episode content already has beat markers (【Beat 1】...【Beat N】), follow them directly
-- Only split a beat further if dialogue exceeds what fits in 12 seconds (~160 Chinese characters)
+- Only split a beat further if dialogue exceeds what fits in 15 seconds (~220 Chinese characters)
 - Do NOT merge beats or reorder them
 
 **For each beat, create:**
 ```json
 {
   "beat_number": 1,
-  "duration_seconds": 12,
+  "duration_seconds": 15,
   "action_description": "...",
   "dialogue": "SpeakerName: Utterance\nSpeakerName2: Utterance2",
   "temporal_reference": {
@@ -94,9 +103,9 @@ Break each episode into sequential beats. Each beat = 12 seconds of screen time.
   2. Escalation (change/reveal)
   3. Aftershock/Button (consequence or cliff point)
 
-- **dialogue**: Format as `SpeakerName: Utterance` (one per line). Preserve ALL original dialogue verbatim — never cut, merge, or paraphrase. If a beat feels empty, add supplementary VO lines attributed to a character (e.g., `傅斯年（旁白VO）: ...`). Never add anonymous narration.
+- **dialogue**: Format as `SpeakerName: Utterance` (one per line). Preserve ALL original dialogue verbatim — never cut, merge, or paraphrase. Do NOT add any supplementary VO or dialogue lines. If a beat feels empty, fill time with continuous visible action in `action_description` instead.
 
-- **Dialogue density target**: 2-4 lines per beat, ~60-140 Chinese characters total. If dialogue exceeds ~160 chars, split into additional consecutive beats.
+- **Dialogue density target**: 3-5 lines per beat, ~80-180 Chinese characters total. If dialogue exceeds ~220 chars, split into additional consecutive beats.
 
 - **continuity_notes.environment**: Must reference an `asset_id` from `assets.json` environments. Only ONE environment per beat (no location changes within a beat).
 
@@ -122,7 +131,7 @@ Write `system_script.json`:
       "beats": [
         {
           "beat_number": 1,
-          "duration_seconds": 12,
+          "duration_seconds": 15,
           "action_description": "林小夏 (a Chinese young woman in white dress) pushes open the glass door of the coffee shop (scene_001), clutching a takeaway tray with both hands. The tray wobbles — one cup slides to the edge. She freezes mid-step, eyes locked on the tilting cup, breath held.",
           "dialogue": "林小夏: 千万别洒...千万别洒...",
           "temporal_reference": {
@@ -194,7 +203,7 @@ Suggest running `/sv-storyboard` to generate keyframe images from the system scr
 
 These rules are hard constraints that must never be violated:
 
-- **12-second beats**: Every beat is exactly 12 seconds. No exceptions.
+- **15-second beats**: Every beat is exactly 15 seconds. No exceptions.
 - **Single location per beat**: Never change environment within a beat. Location changes happen only at beat boundaries.
 - **Preserve all dialogue**: Never cut, merge, or paraphrase original script dialogue. Split beats if needed.
 - **No camera instructions**: Describe story actions only. No camera angles, movements, lens choices, or shot types. That is the storyboard's job.
