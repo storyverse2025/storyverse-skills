@@ -24,7 +24,7 @@ Add the StoryVerse MCP server to your Claude Code MCP settings for image/video g
 {
   "mcpServers": {
     "storyverse": {
-      "url": "https://storyverse-ea52ee7d210d5d989df7aa66511a263c.us.langgraph.app/mcp",
+      "url": "https://cdpx7nw32d.us-east-1.awsapprunner.com/mcp",
       "headers": {
         "Authorization": "Bearer ${BEARER_TOKEN}"
       }
@@ -37,8 +37,8 @@ Add the StoryVerse MCP server to your Claude Code MCP settings for image/video g
 
 | Variable | Required For | Description |
 |----------|-------------|-------------|
-| `FAL_KEY` | MCP tools | fal.ai API key for image/video generation |
-| `BEARER_TOKEN` | MCP tools | MCP server authentication token |
+| `BEARER_TOKEN` | MCP tools | MCP server authentication token (default: `storyverse2026`) |
+| `FAL_KEY` | Fallback | fal.ai API key for direct API calls when MCP server is unavailable |
 | `STORYVERSE_BACKEND_URL` | Backend API | URL of the mvp_backend FastAPI server (default: `http://34.204.80.155/api/v1`) |
 | `STORYVERSE_API_TOKEN` | Backend API | JWT token for backend authentication |
 | `ELEVENLABS_API_KEY` | Voice, Edit | ElevenLabs API key (voice, STT, music) |
@@ -49,7 +49,7 @@ Add the StoryVerse MCP server to your Claude Code MCP settings for image/video g
 ### 4. Required Services
 
 - **mvp_backend** running at `$STORYVERSE_BACKEND_URL` (for full API integration)
-- **storyverse_mcp** running at `http://localhost:8000/mcp` (for image/video generation)
+- **storyverse_mcp** running at `https://cdpx7nw32d.us-east-1.awsapprunner.com/mcp` (for image/video generation)
 
 ### 5. Install Python Dependencies (Optional)
 
@@ -78,6 +78,7 @@ This installs:
 | `/sv-edit` | 9 | Edit pipeline: concat, subtitles, BGM, final compose |
 | `/sv-review` | 10 | Review final video with timecode comments |
 | `/sv-judge` | QA | Judge AI-generated content quality and collect feedback |
+| `/sv-issue` | DEV | Handle GitHub issue: analyze, clarify, implement, test, PR |
 | `/sv-pipeline` | ALL | Full end-to-end orchestration of all steps |
 
 ## Workflow
@@ -106,7 +107,85 @@ Each skill produces a JSON state file consumed by subsequent skills:
 | `review_notes.json` | sv-review | — |
 | `quality_feedback.json` | sv-judge | — |
 | `quality_insights.json` | sv-judge | — |
+| `consistency_report.json` | sv-consistency | — |
 | `pipeline_state.json` | sv-pipeline | sv-pipeline (resume) |
+
+For complete JSON schemas with all fields, see `context/json-schemas.md`.
+
+## JSON Schemas (PRD/Backend Aligned)
+
+All JSON state files are aligned with the PRD and backend model schemas. Key enrichments include:
+
+- **project_brief.json**: Added `title`, `suggested_settings` block for smart defaults
+- **project_settings.json**: Added `project_id` (UUID), `status`, `current_step`, `created_at/updated_at` timestamps, nested `settings` object
+- **script_bible.json**: Added `title`, `outline_beats` (6-beat structure), `script_elements` (structured screenplay), episode `title`/`summary`/`duration`/`status`
+- **assets.json**: Characters get `persona` object, `look_references` with version tracking, `locked_look_id`; Scenes get `story_facts`, `visual_look`; Props get `appearances`
+- **storyboard.json**: Added `id`, `prop_ids`, `versions` array for multi-generation tracking
+- **shots.json**: Added `id`, `storyboard_frame_id`, `beat` structure with `segments` and `locks`, `versions` array
+- **review_notes.json**: Added `id`, `x_position`/`y_position`, `linked_shot_id`, `author`, `status`, `overall_rating`
+
+See `context/json-schemas.md` for the complete schema reference with field descriptions and types.
+
+## Multi-Version Generation
+
+Media-generating steps (assets, storyboard, shots, voice, edit) support multiple generation attempts with version tracking:
+
+### Directory Structure
+```
+assets/characters/char_001_v1.png      # Version 1
+assets/characters/char_001_v2.png      # Version 2
+assets/characters/char_001_selected.png # Currently selected
+```
+
+### Version Tracking in JSON
+- **Characters**: Use `look_references` array with `locked_look_id`
+- **Other media**: Use `versions` array with `selected: true/false`
+- `image_url`/`video_url` always points to the `_selected` file
+
+### Convention
+- Version files: `{id}_v{N}.{ext}` (never deleted)
+- Selected files: `{id}_selected.{ext}` (copy of chosen version)
+- First successful generation is selected by default
+- Regeneration creates v2, v3, etc.
+
+See `context/conventions.md` for full naming and versioning conventions.
+
+## Git + Git LFS Management
+
+Each project output folder is its own independent git repository with Git LFS for large media files.
+
+### Auto-Initialization
+- `sv-intake` (or `sv-pipeline`) initializes the repo: `git init`, `git lfs install`
+- Creates `.gitattributes` for LFS tracking (video, audio, PSD files)
+- Creates `.gitignore` for temp files
+
+### Auto-Commit After Each Step
+Every skill commits its output with a descriptive message:
+```
+step 1: sv-intake - capture project brief
+step 4: sv-assets - generate 5 characters, 3 scenes, 2 props
+step 4: sv-assets - regenerate char_001 v3
+```
+
+### LFS-Tracked File Types
+`.mp4`, `.webm`, `.mov` (video), `.wav`, `.mp3`, `.flac` (audio), `.psd` (images)
+
+See `context/git-management.md` for full git conventions, commit message format, and LFS configuration.
+
+## Backend API Data Flow
+
+When calling backend APIs, always **re-read the JSON state file** immediately before making the API call. This ensures that any external modifications the user made to JSON files (outside of Claude Code) are picked up and sent to the backend. The JSON file is the source of truth for each pipeline step.
+
+## Context Reference Files
+
+| File | Description |
+|------|-------------|
+| `context/json-schemas.md` | Complete JSON schema reference for all pipeline outputs |
+| `context/git-management.md` | Git/LFS initialization, commit conventions, directory structure |
+| `context/conventions.md` | File naming, versioning, ID formats, path conventions |
+| `context/workflow-overview.md` | Pipeline flow, step dependencies, directory structure |
+| `context/mcp-tools-reference.md` | MCP tool signatures for image/video generation |
+| `context/backend-api-reference.md` | Backend API endpoints and request formats |
 
 ---
 
