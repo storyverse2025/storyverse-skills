@@ -171,6 +171,40 @@ Structure I2V prompts as:
 [Emotional tone]
 ```
 
+## I2V Model Content Sensitivity & Fallback Priority
+
+Different I2V models have different content moderation thresholds. When a model blocks content, fall back to a less restrictive model.
+
+### Content-Sensitivity Order (most restrictive → least restrictive)
+
+| Rank | Model | Content Strictness | Notes |
+|------|-------|-------------------|-------|
+| 1 (strictest) | `sora2_i2v` | Very strict | Blocks death, blood, violence, age references, and reference images with violent content |
+| 2 | `kling_o3_pro_i2v` | Strict | Similar to Sora but slightly more permissive |
+| 3 | `kling_o3_i2v` | Moderate | Handles most narrative content; may block extreme violence |
+| 4 (most permissive) | `grok_imagine_i2v` | Permissive | Most lenient content policy; best fallback for censored content |
+
+### Content Moderation Fallback Chain
+
+When a shot fails due to content moderation, apply this 3-tier strategy (see `sv-shots` Step 6.2 for full details):
+
+1. **Tier 1 — Prompt Sanitization**: Replace sensitive words using the I2V substitution table (same model)
+2. **Tier 2 — Dialogue Stripping**: Remove dialogue from prompt; generate visual-only video (same model)
+3. **Tier 3 — Model Switch**: Fall back to less restrictive model in the order above
+
+### Default Fallback Chains by Starting Model
+
+| Starting Model | Fallback Order |
+|---|---|
+| `sora2_i2v` | → `kling_o3_i2v` → `grok_imagine_i2v` |
+| `kling_o3_i2v` | → `grok_imagine_i2v` → `kling_o3_pro_i2v` |
+| `kling_o3_pro_i2v` | → `kling_o3_i2v` → `grok_imagine_i2v` |
+| `grok_imagine_i2v` | → `kling_o3_i2v` → `kling_o3_pro_i2v` |
+
+### Dialogue-Stripped Shots
+
+When `dialogue_stripped: true`, the video was generated without dialogue in the I2V prompt. The original dialogue is preserved in the shot's `dialogue` field and must be added back via `/sv-voice` as a separate audio track.
+
 ## Backend API Data Flow
 
 When calling backend APIs, always **re-read the JSON state file** immediately before making the API call. This ensures that any external modifications the user made to JSON files (outside of Claude Code) are picked up and sent to the backend. The JSON file is the source of truth for each pipeline step.
