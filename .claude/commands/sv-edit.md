@@ -42,13 +42,13 @@ Mix BGM, burn subtitles, apply fade in/out, produce final video.
 
 ### Option A: Backend API (recommended if available)
 
-If `$STORYVERSE_BACKEND_URL` is set, call the pipeline endpoint:
+If `$STORYVERSE_BACKEND_URL` is set, **re-read `harmonized_shots.json` (or `shots.json`)** to pick up any user modifications, then call the pipeline endpoint:
 
 ```
 POST http://34.204.80.155/api/v1/projects/{project_id}/episodes/{episode_id}/edits/pipeline
 
 Body: {
-    "clip_paths": [<list of video file paths or URLs>],
+    "clip_paths": [<list of video file paths from the JSON>],
     "output_dir": "./output/episode_{n}",
     "width": 1280,
     "height": 720,
@@ -65,6 +65,8 @@ Body: {
 }
 ```
 
+**Important**: Always re-read the JSON files immediately before API calls. The user may have modified them directly (e.g., reordering clips, changing settings).
+
 Response provides URLs for: `merged_url`, `subtitles_url`, `bgm_url`, `final_url`.
 
 You can also run individual steps:
@@ -76,7 +78,7 @@ You can also run individual steps:
 ### Option B: CLI Pipeline (if storyverse repo is available)
 
 ```bash
-cd /home/zzz/repos/storyverse/edit
+cd "$HOME/repos/storyverse/edit"
 uv run edit-pipeline pipeline \
     --dir <shots_directory> \
     --out-dir ./output/episode_1 \
@@ -129,24 +131,50 @@ The AI analyzes consecutive clip endings/beginnings and selects the best transit
 
 ## Save Results
 
-Write `edit_output.json`:
+**Download and save locally** with versioned naming:
+- Create directory: `output/episode_{N}/`
+- Save merged video to `output/episode_{N}/merged.mp4`
+- Save subtitles to `output/episode_{N}/subtitles.srt`
+- Save BGM to `output/episode_{N}/bgm.wav`
+- Save final video to `output/episode_{N}/final_v1.mp4`
+- Copy to `output/episode_{N}/final_selected.mp4`
+
+Write `edit_output.json` (see `context/json-schemas.md` for full field reference):
 ```json
 {
   "episodes": [
     {
-      "episode_index": 1,
-      "merged_url": "/path/to/merged.mp4",
-      "subtitles_url": "/path/to/subtitles.srt",
-      "bgm_url": "/path/to/bgm.wav",
-      "final_url": "/path/to/final.mp4",
+      "episode_number": 1,
+      "merged_url": "output/episode_1/merged.mp4",
+      "subtitles_url": "output/episode_1/subtitles.srt",
+      "bgm_url": "output/episode_1/bgm.wav",
+      "final_url": "output/episode_1/final_selected.mp4",
       "settings": {
         "enable_transitions": true,
         "bgm_volume": 0.3,
         "no_vocals": true
-      }
+      },
+      "versions": [
+        {"version": 1, "video_url": "output/episode_1/final_v1.mp4", "selected": true}
+      ]
     }
   ]
 }
+```
+
+## Git Management
+
+After saving `edit_output.json` and output files, commit:
+
+```bash
+git add edit_output.json output/episode_*/
+git commit -m "step 9: sv-edit - compose final video for episode N"
+```
+
+For re-edits:
+```bash
+git add edit_output.json output/episode_1/final_v2.mp4 output/episode_1/final_selected.mp4
+git commit -m "step 9: sv-edit - re-compose episode 1 v2 with adjusted BGM"
 ```
 
 ## After Completion
@@ -162,3 +190,4 @@ Suggest running `/sv-review` to review the final video with timecode comments.
 - Use `no_vocals: true` for BGM to avoid competing with character dialogue
 - For portrait videos (9:16), use resolution 720x1280
 - For landscape videos (16:9), use resolution 1280x720
+- All file paths in JSON use relative paths from the project root
