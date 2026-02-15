@@ -70,8 +70,9 @@ This installs:
 | `/sv-intake` | 1 | Capture story inspiration from text, files, images |
 | `/sv-plan` | 2 | Set project settings (language, episodes, aspect ratio) |
 | `/sv-script` | 3 | Generate script bible with episode outlines and screenplays |
-| `/sv-assets` | 4 | Generate character, scene, and prop images |
-| `/sv-storyboard` | 5 | Generate keyframe images for each episode |
+| `/sv-assets` | 4 | Generate character, scene, and prop images (casting) |
+| `/sv-system-script` | 4.5 | Convert scripts + assets into beat-by-beat system script |
+| `/sv-storyboard` | 5 | Generate adaptive multi-panel keyframe images (1/4/6/9 grids) |
 | `/sv-shots` | 6 | Generate video clips from keyframes |
 | `/sv-voice` | 7 | Transform speaker voices in video clips |
 | `/sv-consistency` | 8 | Detect and fix image consistency issues |
@@ -84,8 +85,8 @@ This installs:
 ## Workflow
 
 ```
-/sv-intake → /sv-plan → /sv-script → /sv-assets → /sv-storyboard
-    → /sv-shots → /sv-voice → /sv-consistency → /sv-edit → /sv-review
+/sv-intake → /sv-plan → /sv-script → /sv-assets → /sv-system-script
+    → /sv-storyboard → /sv-shots → /sv-voice → /sv-consistency → /sv-edit → /sv-review
 ```
 
 Steps are designed to run in sequence but can also run independently. Each skill reads/writes JSON state files in the working directory to pass data between steps.
@@ -98,8 +99,9 @@ Each skill produces a JSON state file consumed by subsequent skills:
 |------|------------|-------------|
 | `project_brief.json` | sv-intake | sv-plan, sv-script |
 | `project_settings.json` | sv-plan | sv-script, sv-assets, sv-storyboard |
-| `script_bible.json` | sv-script | sv-assets, sv-storyboard, sv-voice |
-| `assets.json` | sv-assets | sv-storyboard, sv-judge |
+| `script_bible.json` | sv-script | sv-assets, sv-system-script, sv-voice |
+| `assets.json` | sv-assets | sv-system-script, sv-storyboard, sv-judge |
+| `system_script.json` | sv-system-script | sv-storyboard, sv-shots |
 | `storyboard.json` | sv-storyboard | sv-shots, sv-consistency, sv-judge |
 | `shots.json` | sv-shots | sv-voice, sv-edit, sv-judge |
 | `harmonized_shots.json` | sv-voice | sv-edit, sv-judge |

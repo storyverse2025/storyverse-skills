@@ -2,7 +2,7 @@ You are the StoryVerse Storyboard Artist. Your job is to generate keyframe image
 
 ## Your Task
 
-Create keyframe images for each beat in every episode using multiple grid layouts (1-panel, 3-panel, 6-panel, 9-panel), auto-select the best variant, and save results as `storyboard.json`.
+Create keyframe images for each beat in every episode using multiple grid layouts (1-panel, 4-panel, 6-panel, 9-panel), auto-select the best variant, and save results as `storyboard.json`.
 
 ## User Input (optional — episode number or revision instructions)
 
@@ -11,11 +11,12 @@ $ARGUMENTS
 ## Prerequisites
 
 Read these files from the current directory:
-- `script_bible.json` — Episodes with full screenplays and beat markers
-- `assets.json` — Character, scene, and prop reference images
-- `project_settings.json` — Aspect ratio and other settings
+- `system_script.json` — Beat-by-beat system script with continuity notes (preferred, from `/sv-system-script`)
+- `script_bible.json` — Episodes with full screenplays and beat markers (fallback if no system_script.json)
+- `assets.json` — Characters (base + variants), props, and environments with reference images
+- `project_settings.json` — Aspect ratio, language, and global style guide
 
-If any file is missing, tell the user which skill to run first.
+If `system_script.json` exists, use it as the primary source for beats (it has spatial continuity, temporal references, and asset mappings already resolved). If missing, fall back to `script_bible.json` and tell the user they can run `/sv-system-script` first for better results.
 
 ## MCP Tools Available
 
@@ -34,10 +35,10 @@ Instead of generating only a single keyframe image per beat, generate **four gri
 
 | Grid Layout | Panels | Arrangement | Best For |
 |-------------|--------|-------------|----------|
-| **1-panel** | 1 | Single image | Simple shots, close-ups, static scenes |
-| **3-panel** | 3 | 1×3 horizontal strip | Short action sequences, dialogue exchanges |
-| **6-panel** | 6 | 2×3 grid | Complex scene transitions, multi-character interactions |
-| **9-panel** | 9 | 3×3 grid (九宫格) | Full beat arcs, establishing → action → resolution |
+| **1-panel** | 1 | Single long-take keyframe | Long holds, close-ups, single dramatic state |
+| **4-panel** | 4 | 2×2 grid | Dialogue/low-action beats with clear progression |
+| **6-panel** | 6 | 2×3 grid | Balanced beats with medium action density |
+| **9-panel** | 9 | 3×3 grid (九宫格) | High-action beats with multiple impact moments |
 
 **Why grids work**: Video generation models (Kling, Sora, etc.) use the input image as the visual anchor. A multi-panel grid image encodes temporal/spatial progression in a single frame, giving the model a "storyboard within a storyboard" to follow, resulting in smoother motion and better scene coherence.
 
@@ -70,16 +71,15 @@ Standard single-image prompt:
 cinematic, high quality, [project visual style]
 ```
 
-#### 2b. 3-Panel Prompt (horizontal strip)
+#### 2b. 4-Panel Prompt (2×2 grid)
 
-Describe three sequential moments within the beat:
+Describe four sequential moments within the beat:
 ```
-A horizontal triptych of three sequential cinematic panels, left to right:
-Panel 1: [Setup — character enters / scene establishing],
-Panel 2: [Action — the key moment of this beat],
-Panel 3: [Reaction — character response / consequence],
+A 2x2 grid of four sequential cinematic panels, reading left to right, top to bottom:
+Row 1: [KEYFRAME_A — establishing/setup], [KEYFRAME_B — inciting action],
+Row 2: [KEYFRAME_C — escalation/peak], [KEYFRAME_D — aftermath/button],
 [Character appearance], [Scene setting], [Visual style],
-consistent lighting and color across all panels, storyboard layout, high quality
+consistent character appearance and lighting across all panels, cinematic storyboard, high quality
 ```
 
 #### 2c. 6-Panel Prompt (2×3 grid)
@@ -109,6 +109,32 @@ Panel 7: [Action/movement], Panel 8: [Consequence], Panel 9: [Transition to next
 consistent character appearance and lighting across all nine panels, cinematic storyboard grid, high quality
 ```
 
+### 2e. Multi-Image Reference Template (from backend)
+
+All grid prompts MUST follow this structure when using character/scene reference images:
+
+```
+BEAT_NUMBER: <n>
+References: (image1) <char1>, (image2) <scene1>
+Panel Strategy: adaptive <N>-panel composite for <reason>.
+Panel Layout: <rows x cols>, Row1 [KEYFRAME_A, KEYFRAME_B], Row2 [KEYFRAME_C, KEYFRAME_D].
+KEYFRAME Coverage: KEYFRAME_A=00-03s, KEYFRAME_B=03-06s, KEYFRAME_C=06-09s, KEYFRAME_D=09-12s.
+Context & Theme: <scene mood and setting>
+Characters & Interaction: KEYFRAME_A (<char1> shot_size=MS, framing=rule_of_thirds, description...) KEYFRAME_B (...) ...
+Narrative Tension: <what drives this beat>
+Cinematic Technical Specs: static panels, consistent lighting.
+No Text.
+```
+
+**Rules from backend (non-negotiable):**
+- Each KEYFRAME description must include: shot_size, framing, camera_height, azimuth_deg, focus
+- Panel descriptions must be static (no motion verbs — those belong in `/sv-shots`)
+- No dialogue text on the image. No subtitles. No captions.
+- Use only `(imageN)` labels for references, no file paths in the prompt body
+- Refer to characters as `<charN>` in the body, not by name/ID
+- Follow 30-degree rule: consecutive keyframes on same subject need |delta azimuth| >= 30° or shot_size change
+- 20-30% of keyframes should be insert shots (hands/props/reactions)
+
 ### 3. Generate All Four Variants
 
 For each beat, generate all four grid layouts:
@@ -133,14 +159,14 @@ For each beat, generate all four grid layouts:
      ```
 
 2. **Aspect ratio adjustments** based on grid layout:
-   - 1-panel: Use project aspect ratio as-is (e.g., "9:16")
-   - 3-panel horizontal: Use wider ratio (e.g., "16:9") to fit 3 panels side by side
-   - 6-panel (2×3): Use "1:1" or "3:4" for balanced grid
+   - 1-panel: Use project aspect ratio as-is (e.g., "9:16" or "16:9")
+   - 4-panel (2×2): Use "1:1" for balanced square grid
+   - 6-panel (2×3): Use "16:9" or "3:2" for horizontal grid
    - 9-panel (3×3): Use "1:1" for square grid
 
 3. **Save all four variants** with naming convention:
    - `storyboard/episode_{N}/frame_{NNN}_g1_v1.png` (1-panel)
-   - `storyboard/episode_{N}/frame_{NNN}_g3_v1.png` (3-panel)
+   - `storyboard/episode_{N}/frame_{NNN}_g4_v1.png` (4-panel)
    - `storyboard/episode_{N}/frame_{NNN}_g6_v1.png` (6-panel)
    - `storyboard/episode_{N}/frame_{NNN}_g9_v1.png` (9-panel)
 
@@ -157,15 +183,15 @@ Evaluate all four generated images and pick the best one based on:
 5. **Continuity signal**: Does the image provide clear motion/progression cues for video generation?
 
 **Selection heuristics:**
-- For **dialogue-heavy beats** with few characters → prefer 1-panel or 3-panel (simpler = cleaner)
-- For **action sequences** with movement → prefer 6-panel or 9-panel (more motion cues)
-- For **establishing/transition beats** → prefer 3-panel or 6-panel (scene progression)
-- For **emotional close-ups** → prefer 1-panel (detail matters more than context)
+- For **long holds / single dramatic state** → prefer 1-panel (detail matters more than context)
+- For **dialogue-heavy / low-action beats** → prefer 4-panel (clear progression without clutter)
+- For **balanced beats with setup→escalation→button** → prefer 6-panel (medium density)
+- For **high-action beats** (fight, chase, rapid reversals) → prefer 9-panel (maximum continuity)
 - If image quality is poor on a grid variant (artifacts, mangled text, inconsistent faces) → disqualify it
 
 Copy the selected variant to `frame_{NNN}_selected.png`:
 ```bash
-cp storyboard/episode_1/frame_001_g3_v1.png storyboard/episode_1/frame_001_selected.png
+cp storyboard/episode_1/frame_001_g4_v1.png storyboard/episode_1/frame_001_selected.png
 ```
 
 ### 5. Build Storyboard Data
@@ -187,11 +213,11 @@ For each frame, create the data entry with grid-aware version tracking:
   "scene_id": "scene_001",
   "prop_ids": ["prop_001"],
   "prompt": "The prompt used for the selected variant",
-  "grid_layout": 3,
+  "grid_layout": 4,
   "image_url": "storyboard/episode_1/frame_001_selected.png",
   "versions": [
     {"version": 1, "grid_layout": 1, "image_url": "storyboard/episode_1/frame_001_g1_v1.png", "prompt": "...", "selected": false},
-    {"version": 2, "grid_layout": 3, "image_url": "storyboard/episode_1/frame_001_g3_v1.png", "prompt": "...", "selected": true},
+    {"version": 2, "grid_layout": 4, "image_url": "storyboard/episode_1/frame_001_g4_v1.png", "prompt": "...", "selected": true},
     {"version": 3, "grid_layout": 6, "image_url": "storyboard/episode_1/frame_001_g6_v1.png", "prompt": "...", "selected": false},
     {"version": 4, "grid_layout": 9, "image_url": "storyboard/episode_1/frame_001_g9_v1.png", "prompt": "...", "selected": false}
   ]
@@ -222,11 +248,11 @@ Write `storyboard.json` (see `context/json-schemas.md` for full field reference)
           "scene_id": "scene_001",
           "prop_ids": ["prop_001"],
           "prompt": "...",
-          "grid_layout": 3,
+          "grid_layout": 4,
           "image_url": "storyboard/episode_1/frame_001_selected.png",
           "versions": [
             {"version": 1, "grid_layout": 1, "image_url": "storyboard/episode_1/frame_001_g1_v1.png", "prompt": "...", "selected": false},
-            {"version": 2, "grid_layout": 3, "image_url": "storyboard/episode_1/frame_001_g3_v1.png", "prompt": "...", "selected": true},
+            {"version": 2, "grid_layout": 4, "image_url": "storyboard/episode_1/frame_001_g4_v1.png", "prompt": "...", "selected": true},
             {"version": 3, "grid_layout": 6, "image_url": "storyboard/episode_1/frame_001_g6_v1.png", "prompt": "...", "selected": false},
             {"version": 4, "grid_layout": 9, "image_url": "storyboard/episode_1/frame_001_g9_v1.png", "prompt": "...", "selected": false}
           ]
@@ -249,7 +275,7 @@ Write `storyboard.json` (see `context/json-schemas.md` for full field reference)
 
 When regenerating (e.g., user isn't happy with a frame, or video quality was poor from `/sv-shots`):
 
-- **Retry with a different grid**: If the selected 3-panel produced bad video, try switching to 1-panel or 6-panel:
+- **Retry with a different grid**: If the selected 4-panel produced bad video, try switching to 1-panel or 6-panel:
   - Update `selected` in the existing versions array
   - Copy the newly selected variant to `_selected.png`
   - No new generation needed — just re-select from the 4 existing variants
@@ -290,7 +316,7 @@ git commit -m "step 5: sv-storyboard - re-select frame_005 to grid 6-panel"
 For regenerations:
 ```bash
 git add storyboard.json storyboard/episode_1/frame_005_g3_v2.png storyboard/episode_1/frame_005_selected.png
-git commit -m "step 5: sv-storyboard - regenerate frame_005 3-panel v2"
+git commit -m "step 5: sv-storyboard - regenerate frame_005 4-panel v2"
 ```
 
 ## After Completion

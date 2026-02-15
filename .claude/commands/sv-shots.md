@@ -92,26 +92,68 @@ For each episode in `storyboard.json`:
 
 The `grid_layout` of the input keyframe affects how the video model interprets the image:
 
-- **grid_layout: 1** — Standard single image. Prompt describes motion from this single scene.
-- **grid_layout: 3** — Three panels show a sequence. Prompt should reference the progression: "Starting from the left panel scene, transition through the middle panel action to the right panel resolution..."
-- **grid_layout: 6** — Six panels show detailed progression. Prompt should describe flowing through the grid: "Animate the sequence shown in the 2×3 storyboard grid, from establishing shot through the action to the resolution..."
-- **grid_layout: 9** — Nine panels provide maximum continuity detail. Prompt should guide the model through the full arc: "Follow the 3×3 storyboard sequence panel by panel, creating smooth motion from the establishing shot through the dramatic peak to the transition..."
+- **grid_layout: 1** — Single long-take keyframe. Prompt describes motion from this single scene.
+- **grid_layout: 4** — Four panels (2×2) show a dialogue/progression sequence. Prompt should reference the grid: "Starting from the top-left panel, transition through the top-right action, continuing to bottom-left escalation, and resolving in bottom-right..."
+- **grid_layout: 6** — Six panels (2×3) show balanced progression. Prompt should describe flowing through the grid: "Animate the sequence shown in the 2×3 storyboard grid, from establishing shot through the action to the resolution..."
+- **grid_layout: 9** — Nine panels (3×3) provide maximum continuity detail for action-heavy beats. Prompt should guide the model through the full arc: "Follow the 3×3 storyboard sequence panel by panel, creating smooth motion from the establishing shot through the dramatic peak to the transition..."
 
 **Tip**: Multi-panel grids generally produce better video continuity because the model has more visual context. If a 1-panel shot produces jerky or incoherent video, suggest returning to `/sv-storyboard` and switching to a higher grid count.
 
-### 2. Craft Motion Prompts
+### 2. Craft Generation Prompts (Backend Format)
 
-Structure video prompts for natural motion:
+Each shot's `generation_prompt` must follow this structured format from the backend:
 
 ```
-[Camera movement based on shot_type], [character action/gesture],
-[environmental motion], [emotional tone from dialogue]
+GOAL: [One sentence — what this beat achieves narratively]
+SHOT_PLAN:
+  00.00s-03.00s: [Camera phrase from library] — [character action with asset_identifier]
+  03.00s-06.00s: [Camera phrase] — [action]
+  06.00s-09.00s: [Camera phrase] — [action]
+  09.00s-12.00s: [Camera phrase] — [action/button]
+DIALOGUE:
+  01.00s 【asset_identifier】: Utterance text
+  05.00s 【asset_identifier】: Utterance text
+EXPORT: [Visual summary for rendering — lighting, atmosphere, motion carriers]
+VISUAL_PROMPT: [Concise scene description for the video model, ≤180 chars]
 ```
 
-Examples:
-- Close shot: "Subtle camera push-in, character turns head slowly, tears forming in eyes, soft emotional lighting"
-- Wide shot: "Slow pan across the room, character walks from left to right, warm afternoon light streaming through windows"
-- Medium shot: "Static camera, character gestures while speaking passionately, wind blowing hair gently"
+**Camera Library (use exact phrases):**
+
+Low-motion preferred (default first choice):
+- Static Hold (No Movement)
+- Static Floating
+- Wide Shot + Fog Drift
+- Push In (Killer Intent)
+- Rack Focus (Fast)
+
+Core coverage:
+- Reverse Pullback (Vacuum)
+- Profile Tracking (Handheld Shake)
+- Low Angle Truck Left (Slider)
+- Over-Shoulder Whip
+- Snap Zoom (Face)
+- Return Snap (Reaction)
+- Dutch Angle Close Up (Tension)
+- Silhouette Reveal (Backlight)
+
+Stylized (use sparingly, max 1 per beat):
+- Crash Zoom In (Head on)
+- 360 Bullet Time
+- Tumble Cam (Chaos)
+- Orbital Spin
+
+**Segment rules:**
+- Timeline starts at 00.00s (no buffer)
+- Allowed segment lengths: 2s, 3s, 4s, 5s, 6s
+- Segment count per beat: 3-8
+- Lengths must sum exactly to `duration_seconds`
+- Adapt by beat type:
+  - action_high: shorter (2-3s) segments
+  - dialogue_heavy: longer (3-4s) segments
+  - emotion_hold: include at least one 4-6s hold
+- Every segment must include a visible motion carrier (rain/fog/smoke/light/cloth/debris)
+- Each segment action must include a character-action clause with [asset_identifier]
+- Generation prompt total ≤ 4800 characters
 
 ### 3. Define Beat Segments
 
@@ -253,4 +295,4 @@ Suggest running `/sv-voice` to add character voices, or `/sv-edit` to skip voice
 - Monitor for moderation blocks — adjust prompts if content is flagged
 - Always download generated videos locally and use relative paths
 - The `storyboard_frame_id` links each shot to its source keyframe for traceability
-- **Grid retry**: If video quality is poor for a shot, check `storyboard.json` — the frame likely has other grid variants (1, 3, 6, 9) already generated. Suggest switching to a different grid layout via `/sv-storyboard` before regenerating the video. Higher grid counts (6, 9) generally improve continuity; lower counts (1) improve visual clarity for close-ups.
+- **Grid retry**: If video quality is poor for a shot, check `storyboard.json` — the frame likely has other grid variants (1, 4, 6, 9) already generated. Suggest switching to a different grid layout via `/sv-storyboard` before regenerating the video. Higher grid counts (6, 9) generally improve continuity for action beats; lower counts (1, 4) improve visual clarity for dialogue and close-ups.
