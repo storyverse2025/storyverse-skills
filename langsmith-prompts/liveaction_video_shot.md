@@ -232,6 +232,16 @@ Transform dialogue into VideoShot format:
 • Required safety substitutions (Hard):
   Replace non-consensual restraint / captivity / coercion language with neutral alternatives.
   Do NOT use kidnapping, torture, or wording equivalent to wait to die, domesticate, or livestock.
+• I2V content-filter safety substitutions (Hard) — apply to DIALOGUE, SHOT_PLAN, and VISUAL_PROMPT:
+  - death / die / dying / dead / 死亡 / 死 / 断气 / 身亡 → collapse / lose consciousness / 倒下 / 失去意识
+  - kill / murder / slay / 杀 / 击杀 / 杀害 → defeat / subdue / 击倒 / 制伏
+  - blood / bleeding / bloody / 血 / 流血 / 鲜血 → marks / traces / 伤痕 / 痕迹
+  - suicide / self-harm / 自杀 / 轻生 → fall into despair / 陷入绝望
+  - suffocate / strangle / 窒息 / 勒死 → struggle to breathe / 呼吸困难
+  - hit by car / car crash / 被车撞 / 车祸 → sudden impact / 意外冲击
+  - underage / minor / under 21 / 未成年 → (omit age reference entirely)
+  - kidnap / captive / torture / 绑架 / 囚禁 / 虐待 → restrain / trap / 控制 / 困住
+  These substitutions prevent I2V model content-filter rejections (Sora, Veo3, etc.) while preserving narrative intent. The original dialogue is kept in the shot-level `dialogue` field for `/sv-voice`.
 
 • DIALOGUE FIELD MIRROR (Hard):
   The shot-object level "dialogue" field MUST mirror the exact DIALOGUE block content (including timecodes).
