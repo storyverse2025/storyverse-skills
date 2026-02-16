@@ -69,7 +69,7 @@ This installs:
 |---------|------|-------------|
 | `/sv-intake` | 1 | Capture story inspiration from text, files, images |
 | `/sv-plan` | 2 | Set project settings (language, episodes, aspect ratio) |
-| `/sv-script` | 3 | Generate script bible with episode outlines and screenplays |
+| `/sv-script` | 3 | Generate script bible via Episode Outline Agent → Episode Script Agent (see LangSmith Prompts below) |
 | `/sv-assets` | 4 | Generate character, scene, and prop images (casting) |
 | `/sv-system-script` | 4.5 | Convert scripts + assets into beat-by-beat system script |
 | `/sv-storyboard` | 5 | Generate adaptive multi-panel keyframe images (1/4/6/9 grids) |
@@ -177,6 +177,49 @@ See `context/git-management.md` for full git conventions, commit message format,
 ## Backend API Data Flow
 
 When calling backend APIs, always **re-read the JSON state file** immediately before making the API call. This ensures that any external modifications the user made to JSON files (outside of Claude Code) are picked up and sent to the backend. The JSON file is the source of truth for each pipeline step.
+
+## LangSmith Prompt Templates
+
+The `langsmith-prompts/` directory contains mandatory prompt templates that define agent behavior for key pipeline steps. Skills **MUST** follow these templates — they are not optional guidelines.
+
+### Script Generation: Two-Phase Agent Pipeline
+
+`/sv-script` generates the script bible through two sequential agent phases:
+
+#### Phase 1: Episode Outline Agent (`langsmith-prompts/mvp_episode_outline.md`)
+
+Splits source text into a structured, paced episode outline:
+
+1. **Extract Global Events** (E1...En) in source order with evidence sentences
+2. **Score Event Intensity** — Drama score (1-5), Visual score (1-5), Turn type per event
+3. **Episode Splitting Strategy** — high-intensity events (Drama+Visual ≥ 8) get more episodes/beats; low-intensity events get merged
+4. **Output**: Main character table, global event list, intensity table, episode outline table with required fields: `episode_index`, `cover_events`, `main_locations`, `characters_present`, `core_conflict`, `hook_type`, `hook_line`, `target_beats`, `source_text` (verbatim from source)
+
+Non-negotiable rules: event order matches source, episode slices are contiguous, every episode ends with a hook, `source_text` is verbatim, 8-12 beats per episode.
+
+#### Phase 2: Episode Script Agent (`langsmith-prompts/mvp_episode.md`)
+
+Converts the episode outline into beat-level performable scripts:
+
+1. **Source-Slice Binding** — episode i uses only row i `source_text` as facts (no event leakage)
+2. **Locked Line Extraction** — all source dialogue lines preserved verbatim, placed in source order
+3. **Beat Decomposition** — one key point + one location per beat, 3-6 △ action lines, 2-4 Audio lines
+4. **12-Second Beat Structure** — each beat has Setup → Turn → Button internal progression
+5. **Hard Compliance Validation** — mandatory validator checks all beats before output (location, key point count, action line count, audio format, dialogue integrity)
+
+```
+Source Text → Episode Outline Agent → Episode Script Agent → script_bible.json
+                 (Phase 1)                (Phase 2)
+```
+
+### Other LangSmith Prompt Templates
+
+| Template | Used By | Purpose |
+|----------|---------|---------|
+| `mvp_casting.md` | `/sv-assets` | Character/scene/prop image generation with 4-bucket classification |
+| `mvp_system_script.md` | `/sv-system-script` | Beat-level production directives with asset continuity |
+| `mvp_storyboard.md` | `/sv-storyboard` | Keyframe image generation with multi-panel grids |
+| `mvp_video_shot.md` | `/sv-shots` | Video shot generation with GOAL/SHOT_PLAN/DIALOGUE/EXPORT structure |
 
 ## Context Reference Files
 
