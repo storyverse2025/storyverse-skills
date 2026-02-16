@@ -54,7 +54,7 @@ dialogue_density_rules:
   density_preference: low
 
 segment_pacing:
-  action_high: [2, 2, 2, 2, 2, 2]
+  action_high: [2, 2, 2, 3, 3, 3]
   dialogue_heavy: [3, 3, 3, 3, 3]
   emotion_hold: [4, 4, 4, 3]
   balanced: [2, 2, 2, 3, 3, 3]

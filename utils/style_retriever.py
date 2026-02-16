@@ -152,17 +152,22 @@ class StylePlaybookRetriever:
         scored.sort(key=lambda x: x[0], reverse=True)
         return [pb for _, pb in scored[:limit]]
 
-    def format_for_prompt(self, playbook: Dict[str, Any]) -> str:
+    def format_for_prompt(self, playbook) -> str:
         """
         Format a playbook into a text block suitable for injection into
         the VideoShot agent's generation prompt.
 
         Args:
-            playbook: A playbook dict loaded from YAML.
+            playbook: A playbook dict loaded from YAML, or a string playbook ID.
 
         Returns:
             Formatted string with style constraints and reference examples.
+            Empty string if the playbook is not found.
         """
+        if isinstance(playbook, str):
+            playbook = self.get(playbook)
+            if playbook is None:
+                return ""
         lines = []
         lines.append(f"## Style Reference: {playbook.get('name', playbook['id'])}")
         lines.append("")
