@@ -212,6 +212,28 @@ Source Text → Episode Outline Agent → Episode Script Agent → script_bible.
                  (Phase 1)                (Phase 2)
 ```
 
+### Style Selection (User Preference)
+
+Before generating any visual assets (characters, scenes, storyboards, video shots), the system **MUST** ask the user which visual style to use. This applies to `/sv-assets`, `/sv-storyboard`, and `/sv-shots`.
+
+**Available styles:**
+- **2D Animation** — flat illustration, anime-influenced, cel-shaded
+- **3D Animation** — Pixar/CG-style, volumetric lighting, sculpted characters
+- **Live-Action Cinematic** — photorealistic, film grain, natural lighting
+- **Anime** — Japanese animation style, expressive eyes, dynamic poses
+- **Stylized/Painterly** — digital painting, concept art, hand-crafted feel
+
+**Workflow:**
+1. During `/sv-plan` or `/sv-assets`, ask the user: "Which visual style would you like for this project?"
+2. If the user does not respond or skips, auto-select the most appropriate style based on genre/tone:
+   - Romance/Drama → Live-Action Cinematic
+   - Fantasy/Xianni/Wuxia → 3D Animation or Anime
+   - Comedy → 2D Animation
+   - Sci-fi → 3D Animation
+   - Horror → Live-Action Cinematic
+3. Store the chosen style in `project_settings.json` under `settings.visual_style`
+4. All downstream prompts must incorporate the selected style into their generation prompts
+
 ### Other LangSmith Prompt Templates
 
 | Template | Used By | Purpose |

@@ -43,6 +43,10 @@ ln -s $(pwd)/storyverse-skills/.claude/commands/*.md /your/project/.claude/comma
 
 See [CLAUDE.md](./CLAUDE.md) for detailed setup instructions and **development principles** for working effectively with Claude Code.
 
+## Style Selection
+
+Before generating visual assets, the system asks the user which visual style to use (2D Animation, 3D Animation, Live-Action Cinematic, Anime, or Stylized/Painterly). If the user doesn't specify, the system auto-selects the most appropriate style based on the project's genre and tone. The chosen style is stored in `project_settings.json` and applied to all downstream visual generation prompts.
+
 ## Script Generation: Two-Phase LangSmith Pipeline
 
 `/sv-script` generates the script bible through two mandatory LangSmith agent phases using prompt templates in `langsmith-prompts/`:
