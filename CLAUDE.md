@@ -234,13 +234,58 @@ Before generating any visual assets (characters, scenes, storyboards, video shot
 3. Store the chosen style in `project_settings.json` under `settings.visual_style`
 4. All downstream prompts must incorporate the selected style into their generation prompts
 
+### Storyboard: Adaptive Multi-Panel Grids (`langsmith-prompts/mvp_storyboard.md`)
+
+`/sv-storyboard` generates **adaptive multi-panel composite sheets** — NOT single-panel keyframes. Each beat produces ONE composite image containing 1, 4, 6, or 9 panels based on the beat's rhythm and action density.
+
+#### Panel Count Decision (Hard Rule)
+
+The panel count is determined by analyzing each beat's `RHYTHM` tag from the system script `temporal_reference`:
+
+| RHYTHM Tag | Panel Count | When to Use |
+|------------|-------------|-------------|
+| `emotion_hold` / simple establish | **1 panel** | Long hold beats with a single dominant dramatic state |
+| `DIALOGUE_LOAD:high` / low-action | **4 panels** (2x2) | Dialogue-heavy or low-action beats with clear progression |
+| Balanced action + dialogue | **6 panels** (2x3) | Balanced beats with setup/escalation/button |
+| `action_high` / fight / chase | **9 panels** (3x3) | High-action beats with multiple impact or reversal moments |
+
+#### Pre-Generation Checklist (Mandatory)
+
+Before generating any storyboard keyframe, the system **MUST**:
+
+1. **Read the system script** `temporal_reference.transition_to_next` for the RHYTHM tag
+2. **Determine panel count** using the table above
+3. **Construct a multi-panel generation prompt** following the template structure:
+   - `BEAT_NUMBER: <n>`
+   - `References: (image1) <char1>, (image2) <char2>, ... , (imageN) scene`
+   - `Panel Strategy: adaptive <N>-panel composite for <reason>.`
+   - `Panel Layout: <grid>, Row1 [...], Row2 [...]`
+   - `KEYFRAME Coverage: KEYFRAME_A=00-02s, KEYFRAME_B=02-04s, ...`
+   - Each KEYFRAME must include: `shot_size`, `framing`, `camera_height`, `azimuth_deg`, `focus`
+4. **Verify the prompt describes a composite grid image**, not a single scene
+
+#### Film Grammar Rules
+
+- Every beat reads as **setup -> escalation -> button** across keyframes
+- **30-degree rule**: consecutive keyframes on the same subject need |delta azimuth| >= 30 degrees or shot_size change
+- No consecutive Wide Shots without an intervening cut-in
+- 20-30% of keyframes should be Insert Shots (hands/props/reactions)
+- Preserve screen-left/screen-right eyeline continuity across panels and beats
+
+#### Non-Negotiable
+
+- Panel grids contain ONLY keyframe panels (+ optional INSERT for props) — no character reference tiles or environment-only tiles
+- No dialogue text, subtitles, or captions on the image
+- No camera/lens/movement jargon in prompts — panels are static frames
+- `img_url` must be copied verbatim from system script
+
 ### Other LangSmith Prompt Templates
 
 | Template | Used By | Purpose |
 |----------|---------|---------|
 | `mvp_casting.md` | `/sv-assets` | Character/scene/prop image generation with 4-bucket classification |
 | `mvp_system_script.md` | `/sv-system-script` | Beat-level production directives with asset continuity |
-| `mvp_storyboard.md` | `/sv-storyboard` | Keyframe image generation with multi-panel grids |
+| `mvp_storyboard.md` | `/sv-storyboard` | Adaptive multi-panel keyframe generation (1/4/6/9 grids) |
 | `mvp_video_shot.md` | `/sv-shots` | Video shot generation with GOAL/SHOT_PLAN/DIALOGUE/EXPORT structure |
 
 ## Context Reference Files

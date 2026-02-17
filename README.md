@@ -75,6 +75,19 @@ Source Text → Episode Outline Agent → Episode Script Agent → script_bible.
                 (Phase 1)                 (Phase 2)
 ```
 
+## Storyboard: Adaptive Multi-Panel Grids
+
+`/sv-storyboard` generates **adaptive multi-panel composite sheets** per beat — NOT single-panel keyframes. The panel count is determined by the beat's RHYTHM tag from the system script:
+
+| RHYTHM Tag | Panels | Use Case |
+|------------|--------|----------|
+| `emotion_hold` | 1 panel | Single dramatic state holds |
+| `DIALOGUE_LOAD:high` | 4 panels (2x2) | Dialogue-heavy, low-action beats |
+| Balanced | 6 panels (2x3) | Setup/escalation/button progression |
+| `action_high` | 9 panels (3x3) | Fights, chases, rapid reversals |
+
+Before generating, the system must: (1) read the RHYTHM tag, (2) determine panel count, (3) construct a multi-panel composite prompt with Panel Strategy, Panel Layout, KEYFRAME Coverage, and per-panel shot specs (shot_size, framing, camera_height, azimuth_deg, focus). See `langsmith-prompts/mvp_storyboard.md` for full rules.
+
 ## Project Structure
 
 ```
