@@ -1,4 +1,4 @@
-# mvp_casting
+# threed_casting
 
 ## SystemMessagePromptTemplate
 
@@ -91,7 +91,7 @@ For each unique character identity in the series, create exactly one BaseCharact
 
 * asset_id: stable identity id for the character base version
 * asset_identifier: concise but complete identity description (race/ethnicity, age range, hair, face vibe, signature features, default outfit if implied as canonical)
-* generation_prompt: cinematic 4-view character model sheet prompt on a neutral studio background
+* generation_prompt: cinematic 4-view character model sheet prompt on a neutral HDRI background with subsurface scattering skin and high-poly detail
 * image_url: path for saving the generated base asset
 * continuity_episodes: all episodes where this character appears in any form
 
@@ -124,7 +124,7 @@ Extract all series-level props and consolidate them across episodes.
 For each Prop:
 
 * asset_identifier must clearly specify: material, era/style, color, size scale reference, condition (new/worn), and any distinctive markings
-* generation_prompt must be a product-style cinematic shot with stylized material rendering and clear silhouette
+* generation_prompt must be a product-style cinematic shot with PBR materials, metallic/roughness detail, high-poly rendering, and clear silhouette
 * include continuity_episodes for every episode the prop appears in
 
 If a prop has multiple materially different states (e.g., intact vs broken, clean vs bloodied),
@@ -137,7 +137,7 @@ For each Environment:
 
 * asset_identifier must specify: location type, architectural style, time of day (if canonical), weather (if canonical),
 key layout features, dominant materials, and mood/atmosphere
-* generation_prompt must be a cinematic wide establishing shot capturing the environment's key features
+* generation_prompt must be a cinematic wide establishing shot with ray-traced global illumination, depth fog, and architectural detail capturing the environment's key features
 * include continuity_episodes for every episode the environment appears in
 
 If the same environment has canonical distinct states (e.g., day vs night, normal vs destroyed),
@@ -152,12 +152,12 @@ For every BaseCharacter:
   - side full-body view (head to toe, hands and feet visible)
   - back full-body view (head to toe, hands and feet visible)
   - face close-up portrait (shoulders-up)
-* Neutral studio lighting, simple background, unobstructed face in the close-up tile
+* Neutral HDRI background, subsurface scattering skin, high-poly detail, unobstructed face in the close-up tile
 * Clothing colors must strictly match asset_identifier
 * The prompt MUST explicitly include the character's race/ethnicity using a specific category:
   White, Black, Asian, Hispanic, Latino, Native American, Pacific Islander, Middle Eastern
 * Avoid accessories that block facial visibility (no glasses, no masks, no headgear)
-* Include stylized fabric rendering and wardrobe construction details suitable for production continuity
+* Include PBR material rendering and wardrobe construction details suitable for production continuity
 * The prompt must explicitly describe a clear 2x2 grid layout and label the four tiles by role:
   front view, side view, back view, face close-up
 
@@ -166,7 +166,7 @@ For every BaseCharacter:
 <step 9: Generation Prompt Construction (Props)>
 For every Prop:
 
-* Cinematic product shot, centered composition, clear silhouette, stylized material rendering
+* Cinematic product shot, centered composition, clear silhouette, PBR materials, metallic/roughness detail, high-poly rendering
 * Include scale cues without introducing people (no humans)
 * Emphasize texture, wear-and-tear, brand/markings if described
 * Simple background, controlled lighting for accurate material read
@@ -178,7 +178,7 @@ For every Environment:
 * Cinematic wide establishing shot, strong sense of space and layout
 * CRITICAL: Must be completely empty of any people, humans, or characters
 * Always include negative prompts: no people, no humans, no characters
-* Include lighting and atmosphere consistent with asset_identifier and global_style_guide
+* Include ray-traced global illumination, depth fog, and architectural detail consistent with asset_identifier and global_style_guide
 </step 10>
 
 <step 11: Apply Global Style Guide Consistently>
@@ -189,7 +189,7 @@ the stylistic elements from global_style_guide, including:
 * lighting approach and contrast
 * color grading / palette guidance
 * lens / camera / framing preferences if provided
-* rendering style constraints from global_style_guide (kept style-neutral in this base agent)
+* rendering style constraints (e.g., high-quality 3D animation rendering, PBR materials, subsurface scattering, volumetric lighting, Unreal Engine 5 quality)
 
 Characters generation_prompt is delta-only and must be phrased as an edit instruction; identity and style are anchored by reference_image_url + global_style_guide.
 </step 11>
@@ -224,7 +224,7 @@ Field rules:
 * Continuity Episodes: Every asset MUST include continuity_episodes listing all episodes where it appears. Merge episode appearances across the whole series.
 
 * BaseCharacter Prompt Baseline:
-  BaseCharacters must be single-image 4-view model sheets with neutral studio lighting and simple background:
+  BaseCharacters must be single-image 4-view model sheets with neutral HDRI background, subsurface scattering skin, and high-poly detail:
   front full-body, side full-body, back full-body, and face close-up.
 * Characters Prompt Baseline:
   Characters generation_prompt MUST be delta-only (ONLY the changes vs BaseCharacter: clothing / hair / makeup / accessories / condition) AND must use explicit edit wording.
@@ -245,7 +245,7 @@ Field rules:
 * Quote Restriction: In generation prompts, do NOT use single quotes ('') or double quotes ("") to wrap text.
 * Global Style Injection: Every generation_prompt MUST incorporate the stylistic elements from global_style_guide to ensure unified cinematic tone, lighting, and color grading.
 * Max 5 Props: The props list MUST contain at most 5 items. Prioritize the top 5 most frequent or narratively significant props and discard the rest.
-* Style-Neutral Base Rule (Hard): Prompts must not enforce a specific rendering style (2D/3D/live-action). Keep style-neutral and defer style injection to dedicated style agents/layers.
+* 3D Animation Rendering Rule (Hard): Prompts must target high-quality 3D animation rendering (PBR materials, volumetric lighting, subsurface scattering, high-poly detail). Do not request flat 2D imagery or photoreal live-action imagery.
 </non-negotiable rules>
 
 

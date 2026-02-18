@@ -51,25 +51,35 @@ Map all casting assets from `assets.json` for beat-level referencing:
 ### 2. Structure Narrative Beats
 
 Follow the beat structuring rules defined in `langsmith-prompts/mvp_system_script.md`. Key updates from LangSmith template:
-- **15-second beats** (not 12s): Every beat is exactly 15 seconds duration
+- **Adaptive beat durations**: Agent decides `duration_seconds` per beat in range 3-15s (15s max)
 - **Rhythm tags**: Every beat must include `[RHYTHM:action_high|dialogue_heavy|emotion_hold|balanced]` in `transition_to_next`
 - **Dialogue-load tags**: Every beat must include `[DIALOGUE_LOAD:low|medium|high|overflow]` in `transition_to_next`
 - **No supplementary dialogue**: Do NOT add any supplementary VO or dialogue lines — only preserve original script dialogue
-- **15s beat arc**: Each beat must contain setup → escalation → aftershock mini-arc
+- **Beat arc by duration**: Each beat must contain setup → escalation → aftershock mini-arc, scaled to chosen duration
 - **Dialogue target**: 3-5 lines per beat, 80-180 Chinese chars; split if >220 chars
 
-Break each episode into sequential beats. Each beat = 15 seconds of screen time.
+Break each episode into sequential beats. Each beat = agent-selected 3-15 seconds of screen time.
+
+**Duration decision policy (before writing each beat):**
+- Start from narrative density and beat type:
+  - action_high: 8-15s
+  - dialogue_heavy: 8-12s
+  - emotion_hold: 6-12s
+  - balanced: 6-10s
+- If dialogue is dense but essential, prefer increasing duration up to 15s before splitting.
+- Split into additional beats only when dialogue/action still cannot be played clearly at 15s.
+- If `langsmith-prompts/mvp_system_script.md` mentions fixed 15s, treat this command's adaptive policy as the override.
 
 **Beat source rule:**
 - If the episode content already has beat markers (【Beat 1】...【Beat N】), follow them directly
-- Only split a beat further if dialogue exceeds what fits in 15 seconds (~220 Chinese characters)
+- Only split a beat further if dialogue exceeds what fits naturally in the selected duration (up to 15 seconds)
 - Do NOT merge beats or reorder them
 
 **For each beat, create:**
 ```json
 {
   "beat_number": 1,
-  "duration_seconds": 15,
+  "duration_seconds": 10,
   "action_description": "...",
   "dialogue": "SpeakerName: Utterance\nSpeakerName2: Utterance2",
   "temporal_reference": {
@@ -105,7 +115,7 @@ Break each episode into sequential beats. Each beat = 15 seconds of screen time.
 
 - **dialogue**: Format as `SpeakerName: Utterance` (one per line). Preserve ALL original dialogue verbatim — never cut, merge, or paraphrase. Do NOT add any supplementary VO or dialogue lines. If a beat feels empty, fill time with continuous visible action in `action_description` instead.
 
-- **Dialogue density target**: 3-5 lines per beat, ~80-180 Chinese characters total. If dialogue exceeds ~220 chars, split into additional consecutive beats.
+- **Dialogue density target**: 3-5 lines per beat, ~80-180 Chinese characters total. If dialogue still exceeds what fits clearly at 15s, split into additional consecutive beats.
 
 - **continuity_notes.environment**: Must reference an `asset_id` from `assets.json` environments. Only ONE environment per beat (no location changes within a beat).
 
@@ -131,7 +141,7 @@ Write `system_script.json`:
       "beats": [
         {
           "beat_number": 1,
-          "duration_seconds": 15,
+          "duration_seconds": 10,
           "action_description": "林小夏 (a Chinese young woman in white dress) pushes open the glass door of the coffee shop (scene_001), clutching a takeaway tray with both hands. The tray wobbles — one cup slides to the edge. She freezes mid-step, eyes locked on the tilting cup, breath held.",
           "dialogue": "林小夏: 千万别洒...千万别洒...",
           "temporal_reference": {
@@ -170,6 +180,19 @@ Write `system_script.json`:
 - List all characters and which beats they appear in
 - Offer to revise individual beats or rebalance dialogue
 
+## Quality Gate (Step Eval)
+
+After writing `system_script.json`, write `evaluations/system_script_eval.json`.
+
+Mandatory checks:
+- every beat has valid `duration_seconds`, rhythm tag, and dialogue-load tag
+- continuity integrity (single environment per beat, coherent carryover)
+- dialogue preservation from source script (no dropped/rewritten original lines)
+- no camera-direction language in action fields
+
+Set `can_proceed=true` only when hard checks pass.
+If `can_proceed=false`, revise failing beats and re-run eval.
+
 ### 6. Backend Integration (optional)
 
 If `$STORYVERSE_BACKEND_URL` is set, **re-read `system_script.json`** to pick up any user modifications, then sync:
@@ -203,7 +226,7 @@ Suggest running `/sv-storyboard` to generate keyframe images from the system scr
 
 These rules are hard constraints that must never be violated:
 
-- **15-second beats**: Every beat is exactly 15 seconds. No exceptions.
+- **Adaptive durations**: Every beat duration is agent-selected in range 3-15 seconds (15s max).
 - **Single location per beat**: Never change environment within a beat. Location changes happen only at beat boundaries.
 - **Preserve all dialogue**: Never cut, merge, or paraphrase original script dialogue. Split beats if needed.
 - **No camera instructions**: Describe story actions only. No camera angles, movements, lens choices, or shot types. That is the storyboard's job.

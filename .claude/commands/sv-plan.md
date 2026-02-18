@@ -66,6 +66,17 @@ See `context/json-schemas.md` for full field reference.
 
 8. **Suggest next step**: Tell the user to run `/sv-script` to generate the script bible.
 
+## Quality Gate (Step Eval)
+
+After writing `project_settings.json`, write `evaluations/plan_eval.json` with:
+- `stage`: `plan`
+- `checks`: schema/type validation for `project_id`, `settings.*`, `status`, `current_step`
+- `hard_failures`: invalid UUID, unsupported enum values, or out-of-range episode settings
+- `can_proceed`: `true` only when settings pass validation rules
+- `score`: include `overall` and `pass_threshold` (use `pass_threshold=95`)
+
+If `can_proceed=false`, fix invalid fields before continuing.
+
 ## Git Management
 
 After saving `project_settings.json`, commit:

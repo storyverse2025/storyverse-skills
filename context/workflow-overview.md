@@ -1,30 +1,19 @@
 # StoryVerse Workflow Overview
 
-## 10-Step AI Short Film Production Pipeline
+## 11-Step AI Short Film Production Pipeline
 
 ```
-Step 1: INTAKE          Step 2: PLAN           Step 3: SCRIPT
-[Story Inspiration] --> [Project Settings] --> [Script Bible]
-                                                    |
-                    +-------------------------------+
-                    |
-                    v
-Step 4: ASSETS          Step 5: STORYBOARD     Step 6: SHOTS
-[Characters/Scenes] --> [Keyframe Images]  --> [Video Clips]
-                              |                     |
-                              v                     v
-                    Step 8: CONSISTENCY     Step 7: VOICE
-                    [Image QA & Fix]       [Voice Transform]
-                              |                     |
-                              +----------+----------+
-                                         |
-                                         v
-                              Step 9: EDIT
-                              [Concat + STT + BGM + Compose]
-                                         |
-                                         v
-                              Step 10: REVIEW
-                              [Final Review + Notes]
+Step 1:  INTAKE        -> project_brief.json
+Step 2:  PLAN          -> project_settings.json
+Step 3:  SCRIPT        -> script_bible.json
+Step 4:  ASSETS        -> assets.json
+Step 5:  SYSTEM SCRIPT -> system_script.json
+Step 6:  STORYBOARD    -> storyboard.json
+Step 7:  SHOTS         -> shots.json
+Step 8:  VOICE         -> harmonized_shots.json   (optional)
+Step 9:  CONSISTENCY   -> consistency_report.json (repair mode only; triggered by storyboard failures or manual request)
+Step 10: EDIT          -> edit_output.json
+Step 11: REVIEW        -> review_notes.json
 ```
 
 ## Step Dependencies
@@ -35,12 +24,31 @@ Step 4: ASSETS          Step 5: STORYBOARD     Step 6: SHOTS
 | 2 | `/sv-plan` | `project_brief.json` | `project_settings.json` |
 | 3 | `/sv-script` | `project_brief.json`, `project_settings.json` | `script_bible.json` |
 | 4 | `/sv-assets` | `script_bible.json`, `project_settings.json` | `assets.json` |
-| 5 | `/sv-storyboard` | `script_bible.json`, `assets.json`, `project_settings.json` | `storyboard.json` |
-| 6 | `/sv-shots` | `storyboard.json`, `project_settings.json` | `shots.json` |
-| 7 | `/sv-voice` | `shots.json`, `script_bible.json` | `harmonized_shots.json` |
-| 8 | `/sv-consistency` | `storyboard.json` | Updates `storyboard.json`, `consistency_report.json` |
-| 9 | `/sv-edit` | `harmonized_shots.json` or `shots.json` | `edit_output.json` |
-| 10 | `/sv-review` | `edit_output.json` | `review_notes.json` |
+| 5 | `/sv-system-script` | `script_bible.json`, `assets.json`, `project_settings.json` | `system_script.json` |
+| 6 | `/sv-storyboard` | `system_script.json` (preferred) or `script_bible.json`, `assets.json`, `project_settings.json` | `storyboard.json` |
+| 7 | `/sv-shots` | `storyboard.json`, `system_script.json` (preferred), `assets.json`, `project_settings.json` | `shots.json` |
+| 8 | `/sv-voice` | `shots.json`, `script_bible.json`, `assets.json` | `harmonized_shots.json` |
+| 9 | `/sv-consistency` (repair mode) | `storyboard.json`, `script_bible.json`, `assets.json` | Updates `storyboard.json`, `consistency_report.json` |
+| 10 | `/sv-edit` | `harmonized_shots.json` or `shots.json` | `edit_output.json` |
+| 11 | `/sv-review` | `edit_output.json`, `project_settings.json`, `shots.json` | `review_notes.json` |
+
+## Step Eval Artifacts
+
+Each step writes an eval gate artifact under `evaluations/`. Pipeline progression requires `can_proceed=true`.
+
+| Step | Eval Artifact |
+|------|---------------|
+| 1 | `evaluations/intake_eval.json` |
+| 2 | `evaluations/plan_eval.json` |
+| 3 | `evaluations/script_eval.json` |
+| 4 | `evaluations/assets_eval.json` |
+| 5 | `evaluations/system_script_eval.json` |
+| 6 | `evaluations/storyboard_eval.json` |
+| 7 | `evaluations/shots_eval.json` |
+| 8 | `evaluations/voice_eval.json` |
+| 9 | `evaluations/consistency_eval.json` |
+| 10 | `evaluations/edit_eval.json` |
+| 11 | `evaluations/review_eval.json` |
 
 ## State File Formats
 
@@ -170,6 +178,46 @@ For complete JSON schemas with all fields, see `context/json-schemas.md`.
       "prompt": "AI generation prompt",
       "image_url": "assets/props/prop_001_selected.png",
       "appearances": [{"episode_number": 1, "scene_number": 1, "shot_number": 3}]
+    }
+  ]
+}
+```
+
+### system_script.json
+```json
+{
+  "episodes": [
+    {
+      "episode_number": 1,
+      "beats": [
+        {
+          "beat_number": 1,
+          "duration_seconds": 8,
+          "action_description": "Beat action summary with continuity-safe narrative progression.",
+          "dialogue": "Character A: Dialogue line",
+          "temporal_reference": {
+            "transition_from_previous": "hard cut",
+            "transition_to_next": "match action [RHYTHM:balanced] [DIALOGUE_LOAD:medium]"
+          },
+          "continuity_notes": {
+            "environment": "scene_001",
+            "character_positions": [
+              {
+                "character_id": "char_001",
+                "position": {
+                  "start_position": "screen-left",
+                  "end_position": "screen-center"
+                }
+              }
+            ]
+          },
+          "img_url": "storyboard/episode_1/beat_001.png",
+          "reference_img_urls": [
+            "assets/characters/char_001_selected.png",
+            "assets/scenes/scene_001_selected.png"
+          ]
+        }
+      ]
     }
   ]
 }
@@ -340,6 +388,7 @@ my-film-project/
 ├── project_settings.json
 ├── script_bible.json
 ├── assets.json
+├── system_script.json
 ├── storyboard.json
 ├── shots.json
 ├── harmonized_shots.json

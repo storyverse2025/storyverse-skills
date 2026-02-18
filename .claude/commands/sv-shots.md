@@ -12,11 +12,13 @@ $ARGUMENTS
 
 Read these files from the current directory:
 - `storyboard.json` — Keyframe images and their descriptions
+- `system_script.json` — Beat-level action + dialogue + rhythm tags + `duration_seconds` (preferred source for shot timing)
 - `project_settings.json` — Aspect ratio and settings
 - `assets.json` — Character and scene references (for IDs)
 - `langsmith-prompts/mvp_video_shot.md` — **MANDATORY** LangSmith prompt template for video shot generation (defines prompt structure and non-negotiable rules)
 
-If any prerequisite file is missing, tell the user which skill to run first.
+If `storyboard.json`, `project_settings.json`, `assets.json`, or the LangSmith prompt file is missing, tell the user which skill to run first.
+If `system_script.json` is missing, continue using storyboard-only inference and suggest running `/sv-system-script` for better duration/rhythm alignment.
 
 ## MCP Tools Available
 
@@ -29,7 +31,7 @@ kling_o3_i2v(
     image_url: str,           # Start frame (required)
     prompt: str = "",         # Motion guidance (max 5000 chars)
     end_image_url: str = "",  # End frame for transitions (optional)
-    duration: int = 5,        # 3-15 seconds
+    duration: int = 5,        # Agent-selected per shot, valid range 3-15 seconds
     aspect_ratio: str = "16:9", # 16:9, 9:16, 1:1
     generate_audio: bool = True,
     negative_prompt: str = "blur, distort, and low quality",
@@ -43,7 +45,7 @@ kling_o3_pro_i2v(
     image_url: str,
     prompt: str | None = None,
     end_image_url: str | None = None,
-    duration: int = 5,        # 3-15 seconds
+    duration: int = 5,        # Agent-selected per shot, valid range 3-15 seconds
     generate_audio: bool = True,
     multi_prompt: list[dict] | None = None,  # [{prompt, duration}]
     aspect_ratio: str = "16:9"
@@ -65,7 +67,7 @@ sora2_i2v(
 grok_imagine_i2v(
     prompt: str,
     image_url: str,
-    duration: int = 6,        # 1-15 seconds
+    duration: int = 6,        # Agent-selected per shot, valid range 1-15 seconds
     aspect_ratio: str = "auto"
 )
 ```
@@ -85,9 +87,34 @@ For each episode in `storyboard.json`:
     - The frame's `dialogue` (lip movement, gestures)
     - The `shot_type` (determines camera behavior)
     - The `grid_layout` (see Grid-Aware Prompts below)
-  - **Duration**: Calculate based on dialogue length and action complexity (typically 3-5 seconds per beat)
+  - **Duration**: Agent decides `duration_seconds` per shot (max 15s), using system beat rhythm/dialogue load + shot type + action complexity
   - **Character/scene IDs**: Carry forward from storyboard frame
   - **Storyboard frame link**: Record `storyboard_frame_id` for traceability
+
+#### Duration Decision Policy (Agent-Decided, Max 15s)
+
+For each shot, choose duration before prompt generation:
+
+1. **Use `system_script.json` first** (match by `beat_number`):
+   - If beat has `duration_seconds`, use it as the starting target
+   - If rhythm/dialogue tags suggest poor readability, adjust by ±1-2s
+2. **If no system beat timing exists**, infer from storyboard:
+   - `shot_type` + dialogue density + action complexity determine duration
+3. **Hard limits**:
+   - Kling tools: 3-15s
+   - Grok i2v: 1-15s (still keep 3-15 for consistency unless user asks otherwise)
+   - Sora: 4/8/12 only (choose nearest supported value or switch tool)
+
+Recommended baseline by shot type (before content adjustments):
+- Close-up / insert / reaction: 3-5s
+- Medium / two-shot dialogue: 5-8s
+- Wide establishing / transition: 6-10s
+- Action-heavy / chase / combat / complex blocking: 8-15s
+
+Content-based adjustments:
+- High dialogue load or emotional hold: add 1-3s
+- Fast action burst with little dialogue: subtract 1-2s
+- Never exceed 15s unless the user explicitly overrides platform constraints
 
 #### Grid-Aware Motion Prompts
 
@@ -98,39 +125,12 @@ The `grid_layout` of the input keyframe affects how the video model interprets t
 - **grid_layout: 6** — Six panels (2×3) show balanced progression. Prompt should describe flowing through the grid: "Animate the sequence shown in the 2×3 storyboard grid, from establishing shot through the action to the resolution..."
 - **grid_layout: 9** — Nine panels (3×3) provide maximum continuity detail for action-heavy beats. Prompt should guide the model through the full arc: "Follow the 3×3 storyboard sequence panel by panel, creating smooth motion from the establishing shot through the dramatic peak to the transition..."
 
-**Tip**: Multi-panel grids generally produce better video continuity because the model has more visual context for prompt crafting. However, for I2V generation, always use a single-panel reference frame (see Step 1.5).
+**Multi-panel grids produce better video continuity** because the model has the full visual arc (setup → escalation → button) in one image. Use the full composite grid image directly as the I2V `image_url` — do NOT extract or crop single panels.
 
-### 1.5. Extract Reference Frames
-
-**Critical**: The I2V model's `image_url` must be a **single-panel image**, not a multi-panel grid. Grid images are used for prompt context only.
-
-For each storyboard frame, extract or select the single-panel reference:
-
-1. **Check `grid_layout`** of the selected frame:
-
-   - **`grid_layout == 1`**: Use `image_url` directly — it's already a single-panel image. Copy/symlink as `frame_{NNN}_extracted.png`.
-
-   - **`grid_layout > 1`**: Look for a g1 (single-panel) variant in the frame's `versions[]` array:
-     - If a g1 version exists → use its `image_url` as the reference
-     - If no g1 version exists → **crop the KEYFRAME panel** from the grid image:
-       - **g4 (2×2)**: Crop top-left quadrant:
-         ```bash
-         ffmpeg -i frame_{NNN}_g4_v1.png -vf "crop=iw/2:ih/2:0:0" frame_{NNN}_extracted.png
-         ```
-       - **g6 (2×3)**: Crop top-left cell:
-         ```bash
-         ffmpeg -i frame_{NNN}_g6_v1.png -vf "crop=iw/3:ih/2:0:0" frame_{NNN}_extracted.png
-         ```
-       - **g9 (3×3)**: Crop top-left cell:
-         ```bash
-         ffmpeg -i frame_{NNN}_g9_v1.png -vf "crop=iw/3:ih/3:0:0" frame_{NNN}_extracted.png
-         ```
-
-2. **Save** extracted/selected single-panel as `storyboard/episode_{N}/frame_{NNN}_extracted.png`
-
-3. **Record** the `reference_frame` path for each shot (used in Step 4 and saved in `shots.json`)
-
-**Key principle**: Grid images are still used for prompt crafting (they provide multi-panel visual context), but are **NOT** passed as `image_url` to the I2V tool. Only single-panel extracted frames are used as I2V references.
+For grid-aware prompts, guide the model through the panel sequence:
+- **grid 4 (2×2)**: "Starting from top-left, transition through top-right, continuing to bottom-left, resolving in bottom-right..."
+- **grid 6 (2×3)**: "Animate the 2×3 storyboard grid from establishing shot through action to resolution..."
+- **grid 9 (3×3)**: "Follow the 3×3 storyboard sequence panel by panel, creating smooth motion from establishing through dramatic peak to transition..."
 
 ### 2. Craft Generation Prompts (LangSmith Template Format)
 
@@ -228,10 +228,10 @@ For each beat, generate using the recommended tool. **Use extracted single-panel
 
 ```
 kling_o3_i2v(
-    image_url=reference_frame_url,           # Single-panel extracted frame (NOT grid)
+    image_url=keyframe_url,                   # Full composite grid image (or single-panel for g1)
     prompt="[motion prompt]",
-    end_image_url=next_reference_frame_url,  # Next frame's single-panel extracted frame
-    duration=5,
+    end_image_url=next_keyframe_url,          # Next beat's keyframe image
+    duration=duration_seconds,
     aspect_ratio=<project aspect_ratio>,
     generate_audio=True,
     negative_prompt="blur, distort, low quality, grid lines, panel borders"
@@ -239,9 +239,9 @@ kling_o3_i2v(
 ```
 
 **Important**:
-- `image_url` = the `reference_frame` path (single-panel from Step 1.5)
-- `end_image_url` = next shot's `reference_frame` path (single-panel)
-- Default `negative_prompt` MUST include `"grid lines, panel borders"` to prevent grid artifacts in video output
+- `image_url` = the storyboard keyframe image (full composite grid for multi-panel beats, or single image for g1 beats)
+- `end_image_url` = next beat's storyboard keyframe image (for smooth transitions)
+- Default `negative_prompt` MUST include `"blur, distort, low quality"`
 
 **Download and save locally** with versioned naming:
 - Create directory: `shots/episode_{N}/`
@@ -253,7 +253,7 @@ kling_o3_i2v(
 - Use `end_image_url` to create smooth visual transitions between consecutive shots
 - For the last beat of an episode, omit `end_image_url`
 - Set `generate_audio=True` for initial audio (will be replaced by voice harmonization later)
-- Always include `"grid lines, panel borders"` in `negative_prompt` even for g1 frames (defensive)
+- The full composite grid gives the video model the complete visual arc for better motion continuity
 
 ### 5. Save Results
 
@@ -270,7 +270,7 @@ Write `shots.json` (see `context/json-schemas.md` for full field reference):
           "beat_number": 1,
           "description": "林小夏端着咖啡穿过大堂",
           "dialogue": "千万别洒...",
-          "duration": 5,
+          "duration": 8,
           "storyboard_frame_id": "frame_001",
           "character_ids": ["char_001"],
           "scene_id": "scene_001",
@@ -278,7 +278,8 @@ Write `shots.json` (see `context/json-schemas.md` for full field reference):
           "beat": {
             "segments": [
               {"time_range": "0-2s", "action": "端着咖啡", "locked": false},
-              {"time_range": "2-5s", "action": "穿过大堂", "locked": false}
+              {"time_range": "2-5s", "action": "穿过大堂", "locked": false},
+              {"time_range": "5-8s", "action": "稳住杯子后继续前进", "locked": false}
             ],
             "locks": {"character": true, "scene": true, "style": false}
           },
@@ -312,7 +313,7 @@ Write `shots.json` (see `context/json-schemas.md` for full field reference):
 
 **Enhanced version entry fields:**
 - `reference_frame`: Path to the single-panel image used as I2V reference (not the grid)
-- `quality_score`: Float (1.0-5.0), populated by `/sv-eval` — null until evaluated
+- `quality_score`: Float (1.0-5.0), populated by the auto-eval step in this command — null until evaluated
 - `quality_issues`: String array of identified quality issues — empty until evaluated
 - `timestamp`: ISO 8601 timestamp of generation
 
@@ -326,14 +327,21 @@ After saving all shots, run automatic quality evaluation on all completed shots:
 4. **Auto-retry** failed shots (up to 3 attempts) with different model/reference frame/prompt adjustments
 5. **Update** `quality_score` and `quality_issues` in the shot's `versions` array
 
-This step runs the same logic as `/sv-eval` inline. To run a standalone evaluation later, use `/sv-eval` directly.
+This step runs inline during `/sv-shots` after generation completes.
 
 **Quick retry strategy for failed shots:**
 - Attempt 1: Adjust prompt + add issues to negative_prompt
 - Attempt 2: Switch to g1 single-panel reference frame
 - Attempt 3: Switch to different I2V model
 
-Save evaluation results in `shot_evaluation.json` alongside `shots.json`.
+Save evaluation results in:
+- `shot_evaluation.json` (detailed per-shot diagnostics)
+- `evaluations/shots_eval.json` (pipeline gate summary with `can_proceed`)
+
+`evaluations/shots_eval.json` must follow `context/evaluation-gating-spec.md` and include:
+- foundational/narrative/cinematic/advanced score blocks
+- hard failures
+- `can_proceed` (true only when thresholds pass)
 
 ### 6. Handle Failures
 
@@ -379,14 +387,13 @@ git commit -m "step 6: sv-shots - regenerate shot_003 v2"
 ## After Completion
 
 - If auto-eval ran and all shots passed: suggest running `/sv-voice` to add character voices, or `/sv-edit` to skip voice and go straight to editing.
-- If auto-eval found persistent failures: suggest running `/sv-eval` for deeper analysis, or returning to `/sv-storyboard` to regenerate keyframes for problem shots.
-- To run a standalone quality evaluation at any time: use `/sv-eval`.
+- If auto-eval found persistent failures: suggest returning to `/sv-storyboard` to regenerate keyframes for problem shots, then re-running `/sv-shots`.
 
 ## Guidelines
 
 - Process one episode at a time to manage context
 - If `$ARGUMENTS` specifies an episode number, only generate shots for that episode
-- Keep shot durations between 3-8 seconds for short drama pacing
+- Agent chooses shot durations between 3-15 seconds based on shot type, rhythm, and dialogue load
 - Use Kling O3 as the default MCP tool; when falling back to fal API, prefer Grok over Kling (grok is faster and more reliable via fal)
 - Monitor for moderation blocks — adjust prompts if content is flagged
 - Always download generated videos locally and use relative paths

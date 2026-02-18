@@ -161,6 +161,20 @@ Body: { "timecode": str, "text": str, "x_position": float, "y_position": float, 
 
 **Important**: Always re-read the JSON file immediately before API calls.
 
+## Quality Gate (Step Eval)
+
+After writing `review_notes.json`, write `evaluations/review_eval.json`.
+
+Mandatory checks:
+- note IDs are unique and traceable to episode/timecode
+- each open issue has category, severity, and suggested fix step
+- overall status and priority fixes are coherent
+
+Scoring rule:
+- include `score.overall` with `pass_threshold=90`
+
+Set `can_proceed=true` when review data is complete and actionable.
+
 ## Git Management
 
 After saving `review_notes.json`, commit:

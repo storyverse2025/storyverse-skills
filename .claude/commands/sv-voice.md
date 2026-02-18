@@ -158,6 +158,21 @@ Write `harmonized_shots.json` (see `context/json-schemas.md` for full field refe
 - If voice quality is poor, suggest trying TTS mode as an alternative
 - Each re-run creates a new version (v2, v3, etc.)
 
+## Quality Gate (Step Eval)
+
+After writing `harmonized_shots.json`, write `evaluations/voice_eval.json`.
+
+Mandatory checks:
+- output clip count matches input shot count
+- dialogue intelligibility and voice-character mapping accuracy
+- no severe audio artifacts, clipping, or desync
+
+Scoring rule:
+- include `score.overall` with `pass_threshold=82`
+
+Set `can_proceed=true` only when checks pass.
+If `can_proceed=false`, re-run failed clips and re-evaluate.
+
 ## Git Management
 
 After saving `harmonized_shots.json` and harmonized video files, commit:

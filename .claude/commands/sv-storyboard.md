@@ -15,8 +15,15 @@ Read these files from the current directory:
 - `script_bible.json` — Episodes with full screenplays and beat markers (fallback if no system_script.json)
 - `assets.json` — Characters (base + variants), props, and environments with reference images
 - `project_settings.json` — Aspect ratio, language, and global style guide
+- `langsmith-prompts/mvp_storyboard.md` — **MANDATORY** LangSmith prompt template for storyboard generation (defines adaptive panel logic, prompt schema, and non-negotiable constraints)
 
 If `system_script.json` exists, use it as the primary source for beats (it has spatial continuity, temporal references, and asset mappings already resolved). If missing, fall back to `script_bible.json` and tell the user they can run `/sv-system-script` first for better results.
+
+## LangSmith Prompt Binding (Hard)
+
+- You MUST follow `langsmith-prompts/mvp_storyboard.md` as the prompt authority for storyboard generation.
+- All generated `generation_prompt` strings MUST comply with the MVP template's schema and non-negotiable rules.
+- This command's runtime strategy (generating multiple grid candidates and selecting best) is allowed, but each candidate prompt must still comply with the MVP storyboard template.
 
 ## MCP Tools Available
 
@@ -270,6 +277,19 @@ Write `storyboard.json` (see `context/json-schemas.md` for full field reference)
 - Display frame number, shot type, grid layout, summary, and dialogue
 - Offer the user the option to override the auto-selection
 - Offer to regenerate individual frames or specific grid variants
+
+## Quality Gate (Step Eval)
+
+After writing `storyboard.json`, write `evaluations/storyboard_eval.json` aligned to `context/evaluation-gating-spec.md`.
+
+Mandatory hard checks:
+- beat-to-keyframe alignment
+- required character/environment presence accuracy
+- severe anatomy/identity defects on selected frames
+- cross-beat spatial continuity sanity
+
+Set `can_proceed=true` only when hard checks pass and threshold is met.
+If `can_proceed=false`, regenerate failed frames or run `/sv-consistency` repair mode, then re-run eval.
 
 ### 8. Regeneration and Grid Retry
 

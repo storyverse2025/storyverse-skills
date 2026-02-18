@@ -1,4 +1,4 @@
-# mvp_storyboard
+# threed_storyboard
 
 ## SystemMessagePromptTemplate
 
@@ -92,7 +92,7 @@ F) Construct Generation Prompt (Multi-Panel)
 * Panel Layout: ...
 * KEYFRAME Coverage: ...
 * Each KEYFRAME description MUST include shot_size, framing, camera_height, azimuth_deg, and focus.
-* The KEYFRAME description MUST include clear visual cues appropriate to the global_style_guide, without hardcoding any specific rendering style.
+* The KEYFRAME description MUST include high-quality 3D animation rendering cues (PBR materials, volumetric lighting, ray-traced GI, depth fog) appropriate to the global_style_guide.
 * No subtitles. No captions.
 * Story-critical UI text is allowed ONLY if it is a prop required by the System Script and must appear as in-world UI/monitor, not as subtitles.
 * generation_prompt is visual prompt ONLY. Do NOT repeat any JSON fields or metadata inside it.
@@ -153,7 +153,7 @@ Panel Strategy: adaptive 6-panel composite for action-dense beat.
 Panel Layout: 2x3, Row1 [KEYFRAME_A | KEYFRAME_B | KEYFRAME_C], Row2 [KEYFRAME_D | KEYFRAME_E | KEYFRAME_F].
 KEYFRAME Coverage: KEYFRAME_A=00-02, KEYFRAME_B=02-04, KEYFRAME_C=04-06, KEYFRAME_D=06-08, KEYFRAME_E=08-10, KEYFRAME_F=10-12.
 Context & Theme: ...
-Characters & Interaction: KEYFRAME_A (shot_size=IS, framing=rule_of_thirds, camera_height=eye_level, azimuth_deg=35, focus=lock and hand; style follows global_style_guide) ... KEYFRAME_B ... KEYFRAME_C ... KEYFRAME_D ... KEYFRAME_E ... KEYFRAME_F ...
+Characters & Interaction: KEYFRAME_A (shot_size=IS, framing=rule_of_thirds, camera_height=eye_level, azimuth_deg=35, focus=lock and hand; high-quality 3D animation, PBR materials, volumetric lighting) ... KEYFRAME_B ... KEYFRAME_C ... KEYFRAME_D ... KEYFRAME_E ... KEYFRAME_F ...
 Narrative Tension: ...
 Cinematic Technical Specs: static panels, consistent lighting.
 No Text.
@@ -187,7 +187,7 @@ No Text.
 * No fixed 02-04 rule. Timeline mapping starts at 00.00s and must cover full beat duration.
 * No camera/lens/movement jargon in generation_prompt. Panels are static frames.
 * Keyframe Prompt Detail (Hard): The KEYFRAME description in generation_prompt MUST include shot_size, framing, camera_height, azimuth_deg, focus, and rendering style cues.
-* Style-Neutral Base Rule (Hard): Keep prompt language style-neutral. Do not hardcode 2D/3D/live-action rendering constraints in this agent.
+* 3D Animation Look (Hard): Rendering cues must stay in high-quality 3D animation aesthetics (PBR, volumetric lighting, subsurface scattering). Do not request flat 2D or photoreal live-action imagery.
 * No readable subtitle text anywhere on the image. Story-critical UI text allowed only as in-world prop if required.
 * Asset Identifier Usage:
 * If you reference a character or environment in non-prompt fields, append the full asset_identifier in parentheses.

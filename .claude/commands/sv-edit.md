@@ -162,6 +162,22 @@ Write `edit_output.json` (see `context/json-schemas.md` for full field reference
 }
 ```
 
+## Quality Gate (Step Eval)
+
+After writing `edit_output.json`, write `evaluations/edit_eval.json`.
+
+Mandatory checks:
+- final video exists and is readable
+- subtitle file exists and timecodes are parseable
+- audio mix sanity (dialogue audible, BGM not overpowering)
+- output duration and episode mapping are valid
+
+Scoring rule:
+- include `score.overall` with `pass_threshold=85`
+
+Set `can_proceed=true` only when checks pass.
+If `can_proceed=false`, re-run failing edit stages and re-evaluate.
+
 ## Git Management
 
 After saving `edit_output.json` and output files, commit:

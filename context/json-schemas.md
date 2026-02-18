@@ -265,7 +265,65 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
 
 ---
 
-## Step 5: storyboard.json (sv-storyboard)
+## Step 5: system_script.json (sv-system-script)
+
+```json
+{
+  "episodes": [
+    {
+      "episode_number": 1,
+      "beats": [
+        {
+          "beat_number": 1,
+          "duration_seconds": 8,
+          "action_description": "Beat action summary with narrative progression.",
+          "dialogue": "Character A: Dialogue line",
+          "temporal_reference": {
+            "transition_from_previous": "hard cut",
+            "transition_to_next": "match action [RHYTHM:balanced] [DIALOGUE_LOAD:medium]"
+          },
+          "continuity_notes": {
+            "environment": "scene_001",
+            "character_positions": [
+              {
+                "character_id": "char_001",
+                "position": {
+                  "start_position": "screen-left",
+                  "end_position": "screen-center"
+                }
+              }
+            ]
+          },
+          "img_url": "storyboard/episode_1/beat_001.png",
+          "reference_img_urls": [
+            "assets/characters/char_001_selected.png",
+            "assets/scenes/scene_001_selected.png"
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `episodes[].episode_number` | integer | yes | Episode number (1-based) |
+| `beats[].beat_number` | integer | yes | Sequential beat number |
+| `beats[].duration_seconds` | integer | yes | Beat runtime in seconds |
+| `beats[].action_description` | string | yes | Narrative action (no camera instructions) |
+| `beats[].dialogue` | string | no | Beat dialogue (one or more lines) |
+| `beats[].temporal_reference` | object | yes | Transition metadata |
+| `beats[].temporal_reference.transition_from_previous` | string | yes | How previous beat transitions in |
+| `beats[].temporal_reference.transition_to_next` | string | yes | Transition out + tags (RHYTHM/DIALOGUE_LOAD) |
+| `beats[].continuity_notes.environment` | string | yes | Environment/scene ID for this beat |
+| `beats[].continuity_notes.character_positions` | array | no | Start/end position per present character |
+| `beats[].img_url` | string | yes | Target keyframe path for storyboard step |
+| `beats[].reference_img_urls` | string[] | yes | Asset image references used downstream |
+
+---
+
+## Step 6: storyboard.json (sv-storyboard)
 
 ```json
 {
@@ -321,7 +379,7 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
 
 ---
 
-## Step 6: shots.json (sv-shots)
+## Step 7: shots.json (sv-shots)
 
 ```json
 {
@@ -384,7 +442,7 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
 
 ---
 
-## Step 7: harmonized_shots.json (sv-voice)
+## Step 8: harmonized_shots.json (sv-voice)
 
 ```json
 {
@@ -414,7 +472,7 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
 
 ---
 
-## Step 8: consistency_report.json (sv-consistency)
+## Step 9: consistency_report.json (sv-consistency, repair mode)
 
 ```json
 {
@@ -446,7 +504,7 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
 
 ---
 
-## Step 9: edit_output.json (sv-edit)
+## Step 10: edit_output.json (sv-edit)
 
 ```json
 {
@@ -472,7 +530,7 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
 
 ---
 
-## Step 10: review_notes.json (sv-review)
+## Step 11: review_notes.json (sv-review)
 
 ```json
 {
@@ -505,6 +563,264 @@ For backend model alignment, see `/home/ubuntu/repos/mvp_backend/app/schemas/`.
   "priority_fixes": [
     "Regenerate frame 5 in episode 1 for stronger expression"
   ]
+}
+```
+
+---
+
+## Pipeline State: pipeline_state.json (sv-pipeline)
+
+```json
+{
+  "current_step": 6,
+  "completed_steps": [1, 2, 3, 4, 5],
+  "skipped_steps": [],
+  "prompt_profile": "mvp",
+  "langsmith_prompt_bindings": {
+    "3": ["langsmith-prompts/mvp_episode_outline.md", "langsmith-prompts/mvp_episode.md"],
+    "4": ["langsmith-prompts/mvp_casting.md"],
+    "5": ["langsmith-prompts/mvp_system_script.md"],
+    "6": ["langsmith-prompts/mvp_storyboard.md"],
+    "7": ["langsmith-prompts/mvp_video_shot.md"]
+  },
+  "started_at": "2026-02-13T10:00:00Z",
+  "last_updated": "2026-02-13T11:30:00Z",
+  "step_outputs": {
+    "1": "project_brief.json",
+    "2": "project_settings.json",
+    "3": "script_bible.json",
+    "4": "assets.json",
+    "5": "system_script.json",
+    "6": "storyboard.json"
+  }
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `current_step` | integer | yes | Next step index to run |
+| `completed_steps` | integer[] | yes | Completed step indices |
+| `skipped_steps` | integer[] | no | Optional steps skipped by user |
+| `prompt_profile` | string | yes | Active prompt profile (`mvp`) |
+| `langsmith_prompt_bindings` | object | yes | Step-to-prompt-file mapping (steps 3-7) |
+| `started_at` | string (ISO) | yes | Pipeline start timestamp |
+| `last_updated` | string (ISO) | yes | Last state update timestamp |
+| `step_outputs` | object | no | Step-to-output file map |
+
+---
+
+## Pipeline QA Gate Artifacts
+
+Per-step eval files saved under `evaluations/`:
+
+- `evaluations/intake_eval.json`
+- `evaluations/plan_eval.json`
+- `evaluations/script_eval.json`
+- `evaluations/assets_eval.json`
+- `evaluations/system_script_eval.json`
+- `evaluations/storyboard_eval.json`
+- `evaluations/shots_eval.json`
+- `evaluations/voice_eval.json`
+- `evaluations/consistency_eval.json`
+- `evaluations/edit_eval.json`
+- `evaluations/review_eval.json`
+
+All eval artifacts should follow `context/evaluation-gating-spec.md` and include at minimum:
+- `stage`
+- `score`
+- `checks`
+- `hard_failures`
+- `can_proceed`
+
+### Concrete Examples (Per Eval File)
+
+`evaluations/intake_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "intake",
+  "score": {"overall": 94, "overall_max": 100, "pass_threshold": 90, "passed": true, "caps_applied": []},
+  "checks": [{"check_id": "required_fields", "severity": "hard", "passed": true, "score": 40, "max": 40}],
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/plan_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "plan",
+  "score": {"overall": 97, "overall_max": 100, "pass_threshold": 95, "passed": true, "caps_applied": []},
+  "checks": [{"check_id": "settings_schema_valid", "severity": "hard", "passed": true, "score": 50, "max": 50}],
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/script_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "script",
+  "score": {"overall": 88, "overall_max": 100, "pass_threshold": 85, "passed": true, "caps_applied": []},
+  "rubric_scores": {"foundational": {"score": 17, "max": 20, "passed": true}, "narrative": {"score": 17, "max": 20, "passed": true}, "cinematic_grammar": {"score": 27, "max": 30, "passed": true}, "advanced": {"score": 27, "max": 30, "passed": true}},
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/assets_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "assets",
+  "score": {"overall": 86, "overall_max": 100, "pass_threshold": 83, "passed": true, "caps_applied": []},
+  "checks": [{"check_id": "anatomy_integrity", "severity": "hard", "passed": true, "score": 20, "max": 20}],
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/system_script_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "system_script",
+  "score": {"overall": 87, "overall_max": 100, "pass_threshold": 85, "passed": true, "caps_applied": []},
+  "checks": [{"check_id": "rhythm_and_dialogue_tags_present", "severity": "hard", "passed": true, "score": 25, "max": 25}],
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/storyboard_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "storyboard",
+  "score": {"overall": 85, "overall_max": 100, "pass_threshold": 84, "passed": true, "caps_applied": []},
+  "checks": [{"check_id": "character_presence_accuracy", "severity": "hard", "passed": true, "score": 25, "max": 25}],
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/shots_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "shots",
+  "score": {"overall": 86, "overall_max": 100, "pass_threshold": 85, "passed": true, "caps_applied": []},
+  "rubric_scores": {"foundational": {"score": 16, "max": 20, "passed": true}, "narrative": {"score": 15, "max": 20, "passed": true}, "cinematic_grammar": {"score": 25, "max": 30, "passed": true}, "advanced": {"score": 22, "max": 30, "passed": true}},
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/voice_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "voice",
+  "score": {"overall": 84, "overall_max": 100, "pass_threshold": 82, "passed": true, "caps_applied": []},
+  "checks": [{"check_id": "dialogue_intelligibility", "severity": "hard", "passed": true, "score": 30, "max": 30}],
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/consistency_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "consistency",
+  "score": {"overall": 89, "overall_max": 100, "pass_threshold": 85, "passed": true, "caps_applied": []},
+  "checks": [{"check_id": "unresolved_critical_issues_zero", "severity": "hard", "passed": true, "score": 40, "max": 40}],
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/edit_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "edit",
+  "score": {"overall": 87, "overall_max": 100, "pass_threshold": 85, "passed": true, "caps_applied": []},
+  "checks": [{"check_id": "final_video_and_subtitles_exist", "severity": "hard", "passed": true, "score": 35, "max": 35}],
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+`evaluations/review_eval.json`
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "review",
+  "score": {"overall": 92, "overall_max": 100, "pass_threshold": 90, "passed": true, "caps_applied": []},
+  "checks": [{"check_id": "notes_actionability", "severity": "hard", "passed": true, "score": 45, "max": 45}],
+  "hard_failures": [],
+  "can_proceed": true
+}
+```
+
+### Failure Example (Generic Gate Fail)
+
+Use this when a step fails hard checks and must block progression:
+
+```json
+{
+  "schema_version": "storyverse_eval_gate_v1",
+  "stage": "storyboard",
+  "score": {
+    "overall": 71,
+    "overall_max": 100,
+    "pass_threshold": 84,
+    "passed": false,
+    "caps_applied": []
+  },
+  "checks": [
+    {
+      "check_id": "character_presence_accuracy",
+      "category": "foundational",
+      "severity": "hard",
+      "passed": false,
+      "score": 8,
+      "max": 25,
+      "evidence": ["frame_004 missing required char_002"],
+      "fix_hint": "Regenerate frame_004 with locked character references"
+    },
+    {
+      "check_id": "anatomy_integrity",
+      "category": "foundational",
+      "severity": "hard",
+      "passed": false,
+      "score": 5,
+      "max": 20,
+      "evidence": ["frame_007 severe hand deformation"],
+      "fix_hint": "Regenerate with stronger anatomy constraints"
+    }
+  ],
+  "hard_failures": [
+    {
+      "code": "CHAR_MISSING_REQUIRED",
+      "message": "Required character not present in selected keyframe",
+      "evidence": ["storyboard/episode_1/frame_004_selected.png"]
+    },
+    {
+      "code": "ANATOMY_SEVERE_DEFECT",
+      "message": "Selected keyframe contains severe anatomy artifact",
+      "evidence": ["storyboard/episode_1/frame_007_selected.png"]
+    }
+  ],
+  "retry": {
+    "attempt": 2,
+    "max_attempts": 3,
+    "next_action": "retry"
+  },
+  "can_proceed": false
 }
 ```
 

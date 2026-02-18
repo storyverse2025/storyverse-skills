@@ -37,7 +37,7 @@ You have access to StoryVerse MCP image generation tools. Read `context/mcp-tool
 
 Follow the asset extraction, classification, and prompt construction rules defined in `langsmith-prompts/mvp_casting.md`. Key rules:
 - **4-bucket output**: base_characters, characters (variants), props (max 5), environments
-- **BaseCharacters**: 4-view model sheet (front/side/back/face close-up), 2D animation rendering, explicit race/ethnicity
+- **BaseCharacters**: 4-view model sheet (front/side/back/face close-up), style-neutral rendering, explicit race/ethnicity
 - **Characters (variants)**: delta-only prompts referencing BaseCharacter, explicit edit wording
 - **Environments**: must be completely empty of people
 - **Global style injection**: every prompt must incorporate global_style_guide
@@ -208,6 +208,19 @@ Body: <character data from assets.json>
 ```
 
 **Important**: Always re-read the JSON file immediately before API calls.
+
+## Quality Gate (Step Eval)
+
+After writing `assets.json`, write `evaluations/assets_eval.json` aligned to `context/evaluation-gating-spec.md`.
+
+Mandatory hard checks:
+- character/environment ID binding correctness
+- no identity swaps between characters
+- anatomy integrity (no severe extra-finger/extra-limb distortions on selected images)
+- selected assets match prompt intent and script role
+
+Set `can_proceed=true` only when hard checks pass and thresholds are met.
+If `can_proceed=false`, regenerate failed assets and re-run eval.
 
 ## Git Management
 

@@ -21,6 +21,24 @@ This repo contains 14 Claude Code skills (slash commands) for production workflo
 13. **Issue** — Handle GitHub issues end-to-end
 14. **Pipeline** — Run the full workflow end-to-end
 
+## Current Production Pipeline
+
+The end-to-end orchestrated flow in `/sv-pipeline` is:
+
+1. `/sv-intake` → `project_brief.json`
+2. `/sv-plan` → `project_settings.json`
+3. `/sv-script` → `script_bible.json`
+4. `/sv-assets` → `assets.json`
+5. `/sv-system-script` → `system_script.json`
+6. `/sv-storyboard` → `storyboard.json`
+7. `/sv-shots` → `shots.json`
+8. `/sv-voice` → `harmonized_shots.json` (optional)
+9. `/sv-consistency` → `consistency_report.json` (repair mode only; run on storyboard failures or by request)
+10. `/sv-edit` → `edit_output.json`
+11. `/sv-review` → `review_notes.json`
+
+Each pipeline step also writes an eval gate artifact under `evaluations/` and only proceeds when `can_proceed=true`.
+
 ## Quick Start
 
 ```bash

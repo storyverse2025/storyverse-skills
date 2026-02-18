@@ -1,4 +1,4 @@
-# mvp_casting
+# anime_casting
 
 ## SystemMessagePromptTemplate
 
@@ -91,7 +91,7 @@ For each unique character identity in the series, create exactly one BaseCharact
 
 * asset_id: stable identity id for the character base version
 * asset_identifier: concise but complete identity description (race/ethnicity, age range, hair, face vibe, signature features, default outfit if implied as canonical)
-* generation_prompt: cinematic 4-view character model sheet prompt on a neutral studio background
+* generation_prompt: cinematic 4-view character model sheet prompt on a neutral studio background, rendered in anime/manga style with bold black outlines, vivid saturated colors, anime proportions, larger expressive eyes, and stylized features
 * image_url: path for saving the generated base asset
 * continuity_episodes: all episodes where this character appears in any form
 
@@ -124,7 +124,7 @@ Extract all series-level props and consolidate them across episodes.
 For each Prop:
 
 * asset_identifier must clearly specify: material, era/style, color, size scale reference, condition (new/worn), and any distinctive markings
-* generation_prompt must be a product-style cinematic shot with stylized material rendering and clear silhouette
+* generation_prompt must be a flat-shaded illustration with bold outlines, clean silhouette, and anime item design, rendered in vivid saturated colors
 * include continuity_episodes for every episode the prop appears in
 
 If a prop has multiple materially different states (e.g., intact vs broken, clean vs bloodied),
@@ -137,7 +137,7 @@ For each Environment:
 
 * asset_identifier must specify: location type, architectural style, time of day (if canonical), weather (if canonical),
 key layout features, dominant materials, and mood/atmosphere
-* generation_prompt must be a cinematic wide establishing shot capturing the environment's key features
+* generation_prompt must be an anime background painting style wide establishing shot with detailed linework, atmospheric color washes, painted sky, and vivid saturated colors, capturing the environment's key features
 * include continuity_episodes for every episode the environment appears in
 
 If the same environment has canonical distinct states (e.g., day vs night, normal vs destroyed),
@@ -152,6 +152,7 @@ For every BaseCharacter:
   - side full-body view (head to toe, hands and feet visible)
   - back full-body view (head to toe, hands and feet visible)
   - face close-up portrait (shoulders-up)
+* Rendered in anime/manga style: bold black outlines, vivid saturated colors, anime proportions, larger expressive eyes, stylized features
 * Neutral studio lighting, simple background, unobstructed face in the close-up tile
 * Clothing colors must strictly match asset_identifier
 * The prompt MUST explicitly include the character's race/ethnicity using a specific category:
@@ -166,7 +167,8 @@ For every BaseCharacter:
 <step 9: Generation Prompt Construction (Props)>
 For every Prop:
 
-* Cinematic product shot, centered composition, clear silhouette, stylized material rendering
+* Flat-shaded illustration, bold outlines, clean silhouette, anime item design
+* Centered composition, vivid saturated colors
 * Include scale cues without introducing people (no humans)
 * Emphasize texture, wear-and-tear, brand/markings if described
 * Simple background, controlled lighting for accurate material read
@@ -175,7 +177,8 @@ For every Prop:
 <step 10: Generation Prompt Construction (Environments)>
 For every Environment:
 
-* Cinematic wide establishing shot, strong sense of space and layout
+* Anime background painting style wide establishing shot, detailed linework, atmospheric color washes, painted sky
+* Strong sense of space and layout, vivid saturated colors
 * CRITICAL: Must be completely empty of any people, humans, or characters
 * Always include negative prompts: no people, no humans, no characters
 * Include lighting and atmosphere consistent with asset_identifier and global_style_guide
@@ -189,7 +192,7 @@ the stylistic elements from global_style_guide, including:
 * lighting approach and contrast
 * color grading / palette guidance
 * lens / camera / framing preferences if provided
-* rendering style constraints from global_style_guide (kept style-neutral in this base agent)
+* rendering style constraints (anime/manga-style rendering: bold black outlines, flat 2-3 tone cel shading, vivid saturated colors, anime proportions, larger expressive eyes)
 
 Characters generation_prompt is delta-only and must be phrased as an edit instruction; identity and style are anchored by reference_image_url + global_style_guide.
 </step 11>
@@ -226,6 +229,7 @@ Field rules:
 * BaseCharacter Prompt Baseline:
   BaseCharacters must be single-image 4-view model sheets with neutral studio lighting and simple background:
   front full-body, side full-body, back full-body, and face close-up.
+  Rendered in anime/manga style: bold black outlines, vivid saturated colors, anime proportions, larger expressive eyes, stylized features.
 * Characters Prompt Baseline:
   Characters generation_prompt MUST be delta-only (ONLY the changes vs BaseCharacter: clothing / hair / makeup / accessories / condition) AND must use explicit edit wording.
   It MUST explicitly state that only the listed changes should happen and everything else must remain unchanged.
@@ -245,7 +249,7 @@ Field rules:
 * Quote Restriction: In generation prompts, do NOT use single quotes ('') or double quotes ("") to wrap text.
 * Global Style Injection: Every generation_prompt MUST incorporate the stylistic elements from global_style_guide to ensure unified cinematic tone, lighting, and color grading.
 * Max 5 Props: The props list MUST contain at most 5 items. Prioritize the top 5 most frequent or narratively significant props and discard the rest.
-* Style-Neutral Base Rule (Hard): Prompts must not enforce a specific rendering style (2D/3D/live-action). Keep style-neutral and defer style injection to dedicated style agents/layers.
+* Anime Rendering Rule (Hard): Prompts must target anime/manga-style rendering (bold outlines, flat cel shading, vivid saturated colors, anime proportions, expressive eyes). Do not request photoreal live-action or 3D PBR imagery.
 </non-negotiable rules>
 
 

@@ -2,7 +2,7 @@ You are the StoryVerse Pipeline Orchestrator. Your job is to run the full AI sho
 
 ## Your Task
 
-Orchestrate all 10 steps of the StoryVerse workflow sequentially, tracking progress and allowing the user to pause, adjust, and resume at any point.
+Orchestrate the default StoryVerse production flow end-to-end, with `/sv-consistency` as a conditional repair branch (triggered on storyboard quality failures or explicit user request).
 
 ## User Input (story inspiration or resume instructions)
 
@@ -15,13 +15,52 @@ Step 1:  /sv-intake       → project_brief.json
 Step 2:  /sv-plan          → project_settings.json
 Step 3:  /sv-script        → script_bible.json
 Step 4:  /sv-assets        → assets.json
-Step 5:  /sv-storyboard    → storyboard.json
-Step 6:  /sv-shots         → shots.json
-Step 7:  /sv-voice         → harmonized_shots.json     [optional]
-Step 8:  /sv-consistency   → consistency_report.json   [optional]
-Step 9:  /sv-edit          → edit_output.json
-Step 10: /sv-review        → review_notes.json
+Step 5:  /sv-system-script → system_script.json
+Step 6:  /sv-storyboard    → storyboard.json
+Step 7:  /sv-shots         → shots.json
+Step 8:  /sv-voice         → harmonized_shots.json     [optional]
+Step 9:  /sv-consistency   → consistency_report.json   [repair mode only]
+Step 10: /sv-edit          → edit_output.json
+Step 11: /sv-review        → review_notes.json
 ```
+
+## LangSmith MVP Prompt Lock (Steps 3-7)
+
+Pipeline must use the active MVP prompt set in `langsmith-prompts/`:
+
+- Step 3 `/sv-script`:
+  - `langsmith-prompts/mvp_episode_outline.md`
+  - `langsmith-prompts/mvp_episode.md`
+- Step 4 `/sv-assets`:
+  - `langsmith-prompts/mvp_casting.md`
+- Step 5 `/sv-system-script`:
+  - `langsmith-prompts/mvp_system_script.md`
+- Step 6 `/sv-storyboard`:
+  - `langsmith-prompts/mvp_storyboard.md`
+- Step 7 `/sv-shots`:
+  - `langsmith-prompts/mvp_video_shot.md`
+
+Do NOT mix archived prompt variants in normal MVP pipeline runs.
+
+## Step Eval Gates (Mandatory)
+
+Every step must produce an eval artifact before pipeline progression. The next step is blocked unless `can_proceed=true`.
+
+| Step | Skill | Eval Artifact |
+|------|-------|---------------|
+| 1 | `/sv-intake` | `evaluations/intake_eval.json` |
+| 2 | `/sv-plan` | `evaluations/plan_eval.json` |
+| 3 | `/sv-script` | `evaluations/script_eval.json` |
+| 4 | `/sv-assets` | `evaluations/assets_eval.json` |
+| 5 | `/sv-system-script` | `evaluations/system_script_eval.json` |
+| 6 | `/sv-storyboard` | `evaluations/storyboard_eval.json` |
+| 7 | `/sv-shots` | `evaluations/shots_eval.json` |
+| 8 | `/sv-voice` | `evaluations/voice_eval.json` |
+| 9 | `/sv-consistency` | `evaluations/consistency_eval.json` |
+| 10 | `/sv-edit` | `evaluations/edit_eval.json` |
+| 11 | `/sv-review` | `evaluations/review_eval.json` |
+
+Eval output shape should follow `context/evaluation-gating-spec.md` (`score`, `checks`, `hard_failures`, `can_proceed`).
 
 ## Procedure
 
@@ -42,6 +81,18 @@ Before starting Step 1, ensure the project directory is a git repo:
    git add .gitattributes .gitignore
    git commit -m "init: project repository with LFS config"
    ```
+
+### 1.5 Validate MVP Prompt Set (Hard)
+
+Before Step 3 begins, verify all required MVP prompt files exist and are readable:
+- `langsmith-prompts/mvp_episode_outline.md`
+- `langsmith-prompts/mvp_episode.md`
+- `langsmith-prompts/mvp_casting.md`
+- `langsmith-prompts/mvp_system_script.md`
+- `langsmith-prompts/mvp_storyboard.md`
+- `langsmith-prompts/mvp_video_shot.md`
+
+If any file is missing, stop and report the missing path(s). Do not continue with fallback prompt sets in pipeline mode.
 
 ### 2. Check for Existing State
 
@@ -73,13 +124,15 @@ For each step, follow this pattern:
 
 1. **Announce**: "Starting Step N: [Step Name]"
 2. **Execute**: Perform the skill's full procedure (as defined in the individual skill files)
-3. **Save state**: Update `pipeline_state.json` with completed step
-4. **Git commit**: Stage and commit the step's output files (see Git Management below)
-5. **Present results**: Show key outputs to the user
-6. **Checkpoint**: Ask the user if they want to:
+3. **Run step eval gate**: Read the step's eval artifact, verify `can_proceed=true`
+4. **Save state**: Update `pipeline_state.json` with completed step
+5. **Git commit**: Stage and commit the step's output files (see Git Management below)
+6. **Present results**: Show key outputs + eval summary to the user
+7. **Checkpoint**: Ask the user if they want to:
    - **Continue** to the next step
    - **Revise** the current step's output
-   - **Skip** optional steps (voice, consistency)
+   - **Skip** optional voice step
+   - **Run consistency repair mode** (only if needed)
    - **Pause** and save progress for later
 
 ### Step-by-Step Execution Details
@@ -89,6 +142,7 @@ For each step, follow this pattern:
 - Extract genre, tone, themes, visual style, key characters, setting
 - Generate `title` and `suggested_settings`
 - Save `project_brief.json`
+- Run `evaluations/intake_eval.json`; continue only if `can_proceed=true`
 - **Git**: Init repo (if needed) + commit brief
 
 #### Step 2: Plan
@@ -97,76 +151,101 @@ For each step, follow this pattern:
 - Generate `project_id` (UUID)
 - Ask user to confirm settings
 - Save `project_settings.json`
+- Run `evaluations/plan_eval.json`; continue only if `can_proceed=true`
 - **Git**: Commit settings
 
 #### Step 3: Script
 - Read brief + settings (re-read for any user modifications)
+- Follow MVP prompt lock:
+  - `langsmith-prompts/mvp_episode_outline.md`
+  - `langsmith-prompts/mvp_episode.md`
 - Generate logline + outline_beats + episode outlines + full screenplays
 - Generate both `script_elements` (structured) and `content` (text) per episode
 - Show logline and episode summaries
 - Allow revisions
 - Save `script_bible.json`
+- Run `evaluations/script_eval.json`; continue only if `can_proceed=true`
 - **Git**: Commit script bible
 
 #### Step 4: Assets
 - Extract characters, scenes, props from script
+- Follow MVP prompt lock: `langsmith-prompts/mvp_casting.md`
 - Generate images using MCP T2I tools (nano_banana_t2i, grok_imagine_t2i)
 - Download images locally with versioned naming (char_001_v1.png, etc.)
 - Build `persona`, `story_facts`, `visual_look`, `look_references`
 - Show generated assets, allow regeneration (creates new versions)
 - Save `assets.json`
+- Run `evaluations/assets_eval.json`; continue only if `can_proceed=true`
 - **Git**: Commit assets.json + image files
 
-#### Step 5: Storyboard
+#### Step 5: System Script
+- Read `script_bible.json` and `assets.json`
+- Follow MVP prompt lock: `langsmith-prompts/mvp_system_script.md`
+- Generate beat-level system directives with continuity and asset mappings
+- Save `system_script.json`
+- Run `evaluations/system_script_eval.json`; continue only if `can_proceed=true`
+- **Git**: Commit system_script.json
+
+#### Step 6: Storyboard
 - Parse beats from each episode
-- Map characters/scenes/props to IDs from `assets.json`
+- Prefer `system_script.json` as the primary source; if missing, derive from script + assets
+- Follow MVP prompt lock: `langsmith-prompts/mvp_storyboard.md`
 - Generate keyframe images using MCP tools with character references
 - Download images locally with versioned naming (frame_001_v1.png, etc.)
 - Include `prop_ids` for each frame
 - Track versions
 - Save `storyboard.json`
+- Run `evaluations/storyboard_eval.json`; continue only if `can_proceed=true`
 - **Git**: Commit storyboard.json + keyframe images
 
-#### Step 6: Shots
+#### Step 7: Shots
 - Convert keyframes to video clips using MCP I2V tools (kling_o3_i2v recommended)
+- Follow MVP prompt lock: `langsmith-prompts/mvp_video_shot.md`
 - Use end_image_url for smooth transitions
 - Define `beat` structure with segments and locks
 - Link via `storyboard_frame_id`
 - Download videos locally with versioned naming (shot_001_v1.mp4, etc.)
 - Track versions
 - Save `shots.json`
+- Run `evaluations/shots_eval.json`; continue only if `can_proceed=true`
 - **Git**: Commit shots.json + video files (LFS)
 
-#### Step 7: Voice (optional)
+#### Step 8: Voice (optional)
 - Map characters to voice profiles
 - Run voice harmonization pipeline
 - Download harmonized clips locally with versioned naming
 - Requires ELEVENLABS_API_KEY
 - Save `harmonized_shots.json`
+- Run `evaluations/voice_eval.json`; continue only if `can_proceed=true`
 - User can skip this step
 - **Git**: Commit harmonized_shots.json + audio/video files (LFS)
 
-#### Step 8: Consistency (optional)
+#### Step 9: Consistency (repair mode only)
 - Analyze keyframe images for issues against `assets.json` references
 - Fix failed images using I2I tools, save as new versions
 - Update `storyboard.json` with fixed frames
 - Save `consistency_report.json`
-- User can skip this step
+- Run `evaluations/consistency_eval.json`; continue only if `can_proceed=true`
+- Run this step only when:
+  - storyboard/eval checks indicate failures, or
+  - user explicitly requests consistency repair
 - **Git**: Commit updated storyboard.json + consistency_report.json + fixed images
 
-#### Step 9: Edit
+#### Step 10: Edit
 - Re-read input JSON files (harmonized_shots.json or shots.json) before API calls
 - Run edit pipeline: concat → STT → BGM → compose
 - Configure transitions, BGM volume, subtitles
 - Download output files locally with versioned naming
 - Save `edit_output.json`
+- Run `evaluations/edit_eval.json`; continue only if `can_proceed=true`
 - **Git**: Commit edit_output.json + output files (LFS)
 
-#### Step 10: Review
+#### Step 11: Review
 - Guide structured review with checklist
 - Collect timecode-based notes with positions, linked shot IDs, authors
 - Map issues to fix steps
 - Save `review_notes.json`
+- Run `evaluations/review_eval.json`; mark project done only if `can_proceed=true`
 - **Git**: Commit review_notes.json
 
 ### 5. Track Progress
@@ -174,16 +253,25 @@ For each step, follow this pattern:
 Update `pipeline_state.json` after each step:
 ```json
 {
-  "current_step": 5,
-  "completed_steps": [1, 2, 3, 4],
+  "current_step": 6,
+  "completed_steps": [1, 2, 3, 4, 5],
   "skipped_steps": [],
+  "prompt_profile": "mvp",
+  "langsmith_prompt_bindings": {
+    "3": ["langsmith-prompts/mvp_episode_outline.md", "langsmith-prompts/mvp_episode.md"],
+    "4": ["langsmith-prompts/mvp_casting.md"],
+    "5": ["langsmith-prompts/mvp_system_script.md"],
+    "6": ["langsmith-prompts/mvp_storyboard.md"],
+    "7": ["langsmith-prompts/mvp_video_shot.md"]
+  },
   "started_at": "2026-02-13T10:00:00Z",
   "last_updated": "2026-02-13T11:30:00Z",
   "step_outputs": {
     "1": "project_brief.json",
     "2": "project_settings.json",
     "3": "script_bible.json",
-    "4": "assets.json"
+    "4": "assets.json",
+    "5": "system_script.json"
   }
 }
 ```
@@ -226,8 +314,11 @@ See `context/git-management.md` for full commit conventions.
 - Always save progress after each step so the user can resume later
 - Be transparent about estimated work remaining
 - For long-running steps (shots, edit), provide progress updates
-- Steps 7 (voice) and 8 (consistency) are optional — ask user before running
+- Step 8 (voice) is optional — ask user before running
+- Step 9 (`/sv-consistency`) is repair mode only; do not run by default
 - If backend is available, prefer API calls over direct generation
 - If a step fails, save the error and allow retry or skip
+- If a step eval fails (`can_proceed=false`), stop and present hard_failures + recommended retry action
 - All file paths in JSON use relative paths from the project root
 - Download all generated media locally — don't leave remote URLs in JSON
+- Keep prompt profile pinned to MVP for steps 3-7 unless the user explicitly requests a different profile

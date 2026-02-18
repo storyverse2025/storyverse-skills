@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "updated_at": "2026-02-16",
+  "commands": [
+    {
+      "command": "/sv-intake",
+      "file": ".claude/commands/sv-intake.md",
+      "step": "1",
+      "category": "workflow",
+      "optional": false,
+      "produces": [
+        "project_brief.json"
+      ]
+    },
+    {
+      "command": "/sv-plan",
+      "file": ".claude/commands/sv-plan.md",
+      "step": "2",
+      "category": "workflow",
+      "optional": false,
+      "produces": [
+        "project_settings.json"
+      ]
+    },
+    {
+      "command": "/sv-script",
+      "file": ".claude/commands/sv-script.md",
+      "step": "3",
+      "category": "workflow",
+      "optional": false,
+      "produces": [
+        "script_bible.json"
+      ]
+    },
+    {
+      "command": "/sv-assets",
+      "file": ".claude/commands/sv-assets.md",
+      "step": "4",
+      "category": "workflow",
+      "optional": false,
+      "produces": [
+        "assets.json"
+      ]
+    },
+    {
+      "command": "/sv-system-script",
+      "file": ".claude/commands/sv-system-script.md",
+      "step": "4.5",
+      "category": "workflow",
+      "optional": false,
+      "produces": [
+        "system_script.json"
+      ]
+    },
+    {
+      "command": "/sv-storyboard",
+      "file": ".claude/commands/sv-storyboard.md",
+      "step": "5",
+      "category": "workflow",
+      "optional": false,
+      "produces": [
+        "storyboard.json"
+      ]
+    },
+    {
+      "command": "/sv-shots",
+      "file": ".claude/commands/sv-shots.md",
+      "step": "6",
+      "category": "workflow",
+      "optional": false,
+      "produces": [
+        "shots.json"
+      ]
+    },
+    {
+      "command": "/sv-voice",
+      "file": ".claude/commands/sv-voice.md",
+      "step": "7",
+      "category": "workflow",
+      "optional": true,
+      "produces": [
+        "harmonized_shots.json"
+      ]
+    },
+    {
+      "command": "/sv-consistency",
+      "file": ".claude/commands/sv-consistency.md",
+      "step": "8",
+      "category": "workflow",
+      "optional": true,
+      "produces": [
+        "consistency_report.json"
+      ]
+    },
+    {
+      "command": "/sv-edit",
+      "file": ".claude/commands/sv-edit.md",
+      "step": "9",
+      "category": "workflow",
+      "optional": false,
+      "produces": [
+        "edit_output.json"
+      ]
+    },
+    {
+      "command": "/sv-review",
+      "file": ".claude/commands/sv-review.md",
+      "step": "10",
+      "category": "workflow",
+      "optional": false,
+      "produces": [
+        "review_notes.json"
+      ]
+    },
+    {
+      "command": "/sv-judge",
+      "file": ".claude/commands/sv-judge.md",
+      "step": "QA",
+      "category": "quality",
+      "optional": false,
+      "produces": [
+        "quality_feedback.json",
+        "quality_insights.json"
+      ]
+    },
+    {
+      "command": "/sv-issue",
+      "file": ".claude/commands/sv-issue.md",
+      "step": "DEV",
+      "category": "development",
+      "optional": false,
+      "produces": []
+    },
+    {
+      "command": "/sv-pipeline",
+      "file": ".claude/commands/sv-pipeline.md",
+      "step": "ALL",
+      "category": "orchestration",
+      "optional": false,
+      "produces": [
+        "pipeline_state.json"
+      ]
+    }
+  ]
+}

@@ -4,6 +4,8 @@ You are the StoryVerse Image Consistency Checker. Your job is to detect and fix 
 
 Analyze all keyframe images against their scene descriptions, detect extra or missing objects, and fix issues. Update `storyboard.json` with corrected images and save a `consistency_report.json`.
 
+This command is intended as **repair mode** (not a default always-run stage): use it when storyboard quality checks fail or when the user explicitly requests targeted consistency fixes.
+
 ## User Input (optional — episode number or specific frame to check)
 
 $ARGUMENTS
@@ -131,13 +133,27 @@ Save `consistency_report.json`:
 }
 ```
 
+## Quality Gate (Step Eval)
+
+After writing `consistency_report.json`, write `evaluations/consistency_eval.json`.
+
+Mandatory checks:
+- every reviewed frame has explicit status/action
+- all FAIL frames are either fixed or intentionally deferred with rationale
+- updated `storyboard.json` references selected fixed versions correctly
+
+Scoring rule:
+- include `score.overall` with `pass_threshold=85`
+
+Set `can_proceed=true` only when unresolved critical consistency failures are zero.
+
 ## Git Management
 
 After updating `storyboard.json` and saving `consistency_report.json`, commit:
 
 ```bash
 git add storyboard.json consistency_report.json storyboard/episode_*/
-git commit -m "step 8: sv-consistency - check and fix N frames"
+git commit -m "step 9: sv-consistency - check and fix N frames"
 ```
 
 ## After Completion
@@ -146,7 +162,7 @@ Suggest running `/sv-edit` to assemble the final video (if shots are ready), or 
 
 ## Guidelines
 
-- This step is optional but recommended for quality assurance
+- Treat this as a conditional repair step, not a mandatory default stage
 - Focus on issues that would be visually distracting in the final video
 - Don't be too strict — AI-generated images will never be pixel-perfect
 - Character consistency is the most important check

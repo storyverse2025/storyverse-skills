@@ -139,6 +139,19 @@ Save `script_bible.json` (see `context/json-schemas.md` for full field reference
 4. **Allow iteration**: The user can ask to revise specific episodes by number
 5. **Suggest next step**: Tell the user to run `/sv-assets` to generate character and scene images
 
+## Quality Gate (Step Eval)
+
+After writing `script_bible.json`, write `evaluations/script_eval.json` aligned to `context/evaluation-gating-spec.md`.
+
+Mandatory hard checks:
+- locked/source dialogue preserved (no dropped original lines)
+- speaker attribution integrity
+- source-order integrity (no event leakage/reordering)
+- no hallucinated world rules
+
+Set `can_proceed=true` only when hard checks pass and score threshold is met.
+If `can_proceed=false`, revise script and re-run eval before proceeding.
+
 ## Git Management
 
 After saving `script_bible.json`, commit:

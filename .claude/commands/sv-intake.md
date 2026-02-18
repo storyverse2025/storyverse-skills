@@ -68,6 +68,17 @@ The `suggested_settings` block pre-fills smart defaults for the next step (sv-pl
 
 6. **Suggest next step**: Tell the user to run `/sv-plan` to configure project settings.
 
+## Quality Gate (Step Eval)
+
+After writing `project_brief.json`, write `evaluations/intake_eval.json` with:
+- `stage`: `intake`
+- `checks`: required brief fields present (`title`, `genre`, `tone`, `themes`, `key_characters`, `setting`, `suggested_settings`)
+- `hard_failures`: missing required fields or invalid enum values
+- `can_proceed`: `true` only if required fields are complete and valid
+- `score`: include `overall` and `pass_threshold` (use `pass_threshold=90`)
+
+If `can_proceed=false`, stop and ask for missing clarifications before moving forward.
+
 ## Git Management
 
 After saving `project_brief.json`, initialize the project git repo and commit:
