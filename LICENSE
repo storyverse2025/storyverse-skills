@@ -1,0 +1,9 @@
+LICENSE — 待定 / TO BE DETERMINED
+
+本仓库将作为 StoryVerse 的公开 Skills 发布，但授权方式尚未确定。
+发布前请替换本文件为正式授权条款（例如 MIT / Apache-2.0 / 自定义内部协议），
+并同步检查各 SKILL.md frontmatter 中 `license` 字段的措辞是否一致。
+
+This repository is intended to be published as StoryVerse's public Skills,
+but the license has not yet been chosen. Replace this file with a proper
+license before publishing, and align the `license` field in each SKILL.md.

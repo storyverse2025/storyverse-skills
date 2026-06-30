@@ -1,0 +1,48 @@
+Keyframe Prompt 填空模板
+========================
+说明：{花括号} 内是需要替换的内容，[方括号] 内是写给你看的说明。
+输出给用户时删除所有 [方括号] 说明文字，只保留实际描述。
+机位默认用 CAM-D（侧面交叉）；只有在需要"建立宽景"时才用 CAM-A。
+
+----------------------------------------------------------------------
+
+Hyper-realistic cinematic vertical (9:16) still frame.
+{场景一句话描述：空间类型 + 整体氛围}.
+
+CAMERA: {机位描述：拍摄角度 + 朝向 + 两个角色的相对关系}.
+  [如是建立宽景 CAM-A：Wide establishing shot, eye level, full room width visible.]
+  [如是侧面交叉 CAM-D：Side angle, capturing both characters at full body height,
+  facing each other. Eye level.]
+
+LEFT FIGURE — 【{角色A外貌：人种 + 发型发色 + 服装完整描述}】:
+  Standing {面朝方向，如 facing screen-right}. {姿态：relaxed / tense / standing straight}.
+  {手部状态：Arms at sides / One hand on desk / etc.}
+
+RIGHT FIGURE — 【{角色B外貌：人种 + 发型发色 + 服装完整描述}】:
+  Standing {面朝方向，如 facing screen-left}. {姿态描述}.
+  {手部状态描述}.
+
+FOREGROUND: {前景内容：家具 / 地面 / 道具}.
+BACKGROUND: {背景内容：墙面 / 窗 / 其他家具 + 景深处理}.
+
+LIGHT: {主光源：来源 + 方向 + 色温}.
+  {辅助光源（如有）}.
+  {光线在角色身上的效果：catches her shoulders / falls across his face 等}.
+
+MOOD: {情绪基调：一句话，不超过 20 词}.
+
+STYLE: Photoreal, cinematic, 4K, vertical 9:16 frame.
+  No text, no subtitles, no watermarks. Shallow depth of field.
+
+NEGATIVE: No text. No extra characters. No subtitles. No watermarks.
+  Do NOT alter costume colors.
+  {如有特殊禁止项：Do NOT show door / window on wrong side / 锁定不该出现的首饰 等}.
+
+----------------------------------------------------------------------
+填写要点：
+- 两个角色都要全身入画、正面相对，方便后续核对面孔一致性。
+- LIGHT 必须写文字——AI 无法从图片判断光源动态（壁炉闪烁、日光变化）。
+- NEGATIVE 用来锁定"场景初始状态"，特别是剧情中会变化的元素（如逐件脱下的首饰，
+  开场时的状态要在这里钉死，避免 AI 从资产图里自动补全）。
+- 背景里 Spatial Bible 记录到的固定配置（如仆人、特定家具）要预置进去，
+  否则后续 Beat 背景可能突然冒出或消失不明元素。
