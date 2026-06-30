@@ -9,12 +9,14 @@
 
 ## English
 
-StoryVerse Skills is a Claude Skills collection for the most drift-prone prompt-writing steps in an AI vertical short-drama pipeline:
+StoryVerse Skills is a set of `SKILL.md`-based agent skills for Claude, Codex, OpenClaw, Hermes, and other agents that support the Agent Skills / progressive-disclosure pattern. The current skills focus on the most drift-prone prompt-writing steps in an AI vertical short-drama pipeline:
 
 1. Turn a Spatial Bible into a reusable Keyframe / scene-ref staging image.
 2. Turn a single Beat into a stable 15-second shots prompt for AI video tools.
 
-This repository only contains Claude Skills source files and packaged `.skill` artifacts. It does not include the old `/sv-*` pipeline slash commands, backend API docs, LangSmith prompt archives, or sample project state files.
+This repository only contains agent skill source folders and packaged `.skill` artifacts. It does not include the old `/sv-*` pipeline slash commands, backend API docs, LangSmith prompt archives, or sample project state files.
+
+The `skills/` directories are the portable source format. The `dist/*.skill` files are packaged snapshots for agents that support `.skill` uploads.
 
 ### Skills
 
@@ -43,17 +45,91 @@ storyverse-skills/
         └── references/shots-prompt-manual.md
 ```
 
-`skills/` is the source of truth. `dist/` contains upload-ready `.skill` package snapshots.
+`skills/` is the source of truth. `dist/` contains upload-ready `.skill` package snapshots for compatible clients.
 
 ### Install
 
+Use the source folders for Codex, OpenClaw, Hermes, and other local agents. Use `dist/*.skill` only when your client supports packaged `.skill` uploads.
+
 #### Claude.ai / Claude App
 
-Download a `.skill` file from `dist/`, then upload it in Claude Settings -> Capabilities -> Skills. This path is best for teammates who only need to use the skills, not edit them.
+Download a `.skill` file from `dist/`, then upload it in Claude Settings -> Capabilities -> Skills.
 
 #### Claude Code / Local Skills
 
-Copy or symlink `skills/<name>/` into your Claude Code skills directory. Use the source layout when you want to edit, review, and repackage the skills.
+Copy or symlink the source folders into your Claude Code skills directory:
+
+```bash
+mkdir -p ~/.claude/skills
+cp -R skills/keyframe-prompt ~/.claude/skills/
+cp -R skills/shots-prompt-writing ~/.claude/skills/
+```
+
+If your Claude Code setup uses a different skills path, keep the same folder shape: each skill directory must contain its own `SKILL.md`.
+
+#### Codex
+
+Install as user-level skills:
+
+```bash
+mkdir -p ~/.agents/skills
+cp -R skills/keyframe-prompt ~/.agents/skills/
+cp -R skills/shots-prompt-writing ~/.agents/skills/
+```
+
+Or install repo-scoped skills inside a project:
+
+```bash
+mkdir -p .agents/skills
+cp -R /path/to/storyverse-skills/skills/keyframe-prompt .agents/skills/
+cp -R /path/to/storyverse-skills/skills/shots-prompt-writing .agents/skills/
+```
+
+Codex detects skill changes automatically; restart Codex if the skills do not appear. See the [Codex Agent Skills docs](https://developers.openai.com/codex/skills).
+
+#### OpenClaw
+
+Install into the active workspace:
+
+```bash
+openclaw skills install ./skills/keyframe-prompt --as keyframe-prompt
+openclaw skills install ./skills/shots-prompt-writing --as shots-prompt-writing
+```
+
+Install globally for all local OpenClaw agents:
+
+```bash
+openclaw skills install ./skills/keyframe-prompt --as keyframe-prompt --global
+openclaw skills install ./skills/shots-prompt-writing --as shots-prompt-writing --global
+```
+
+OpenClaw local installs expect `SKILL.md` at the source root. See the [OpenClaw Skills docs](https://docs.openclaw.ai/tools/skills).
+
+#### Hermes
+
+Copy source folders into Hermes' skills directory:
+
+```bash
+mkdir -p ~/.hermes/skills/storyverse
+cp -R skills/keyframe-prompt ~/.hermes/skills/storyverse/
+cp -R skills/shots-prompt-writing ~/.hermes/skills/storyverse/
+```
+
+Then start a new session or reset the current one so Hermes refreshes its skills list. Hermes also supports `hermes skills install` for supported sources. See the [Hermes Skills System docs](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills) and [Working with Skills](https://hermes-agent.nousresearch.com/docs/guides/work-with-skills).
+
+#### Other agents
+
+Use the same portable layout:
+
+```text
+<agent-skills-root>/
+└── keyframe-prompt/
+    ├── SKILL.md
+    ├── assets/
+    └── references/
+```
+
+If the agent supports the Agent Skills standard, point it at the `skills/<name>/` directories or copy those directories into its configured skills root.
 
 ### When To Use
 
@@ -99,12 +175,14 @@ PACKAGER_DIR=/path/to/skill-creator ./package_all.sh
 
 ## 中文
 
-StoryVerse 的 Claude Skills 集合，当前聚焦 AI 短剧（竖屏 9:16 微短剧）生成流水线里最容易漂移的两个提示词环节：
+StoryVerse Skills 是一组基于 `SKILL.md` 的 Agent Skills，适用于 Claude、Codex、OpenClaw、Hermes，以及其他支持 Agent Skills / progressive-disclosure 模式的 agent。当前 skills 聚焦 AI 短剧（竖屏 9:16 微短剧）生成流水线里最容易漂移的两个提示词环节：
 
 1. 把 Spatial Bible 落成一张可复用的 Keyframe / scene-ref 空间基准帧。
 2. 把单个 Beat 写成 AI 视频工具能稳定生成的 15 秒 shots prompt。
 
-这个仓库只保留 Claude Skills 源码和打包产物，不包含旧版 `/sv-*` pipeline slash commands、backend API 文档、LangSmith prompt 归档或示例项目状态文件。
+这个仓库只保留 agent skill 源码目录和 `.skill` 打包产物，不包含旧版 `/sv-*` pipeline slash commands、backend API 文档、LangSmith prompt 归档或示例项目状态文件。
+
+`skills/` 目录是可跨 agent 使用的源码格式；`dist/*.skill` 是给支持 `.skill` 上传的客户端使用的打包快照。
 
 ### Skills
 
@@ -133,17 +211,91 @@ storyverse-skills/
         └── references/shots-prompt-manual.md
 ```
 
-`skills/` 是权威源码；`dist/` 是可上传安装的 `.skill` 打包快照。
+`skills/` 是权威源码；`dist/` 是给兼容客户端上传安装的 `.skill` 打包快照。
 
 ### 安装
 
+Codex、OpenClaw、Hermes 和其他本地 agent 优先使用 `skills/` 源码目录；只有客户端支持 `.skill` 上传时，才使用 `dist/*.skill`。
+
 #### Claude.ai / Claude App
 
-下载 `dist/` 里的 `.skill` 文件，在 Claude 的 Settings -> Capabilities -> Skills 上传。适合给不需要改源码的团队成员使用。
+下载 `dist/` 里的 `.skill` 文件，在 Claude 的 Settings -> Capabilities -> Skills 上传。
 
 #### Claude Code / 本地 Skills
 
-把 `skills/<name>/` 复制或链接到你的 Claude Code skills 目录。源码方式适合继续编辑、审查和重新打包。
+把源码目录复制或链接到 Claude Code 的 skills 目录：
+
+```bash
+mkdir -p ~/.claude/skills
+cp -R skills/keyframe-prompt ~/.claude/skills/
+cp -R skills/shots-prompt-writing ~/.claude/skills/
+```
+
+如果你的 Claude Code 配置使用不同 skills 路径，保持同样目录形态即可：每个 skill 目录里必须有自己的 `SKILL.md`。
+
+#### Codex
+
+安装为用户级 skills：
+
+```bash
+mkdir -p ~/.agents/skills
+cp -R skills/keyframe-prompt ~/.agents/skills/
+cp -R skills/shots-prompt-writing ~/.agents/skills/
+```
+
+或者安装为某个项目内的 repo-scoped skills：
+
+```bash
+mkdir -p .agents/skills
+cp -R /path/to/storyverse-skills/skills/keyframe-prompt .agents/skills/
+cp -R /path/to/storyverse-skills/skills/shots-prompt-writing .agents/skills/
+```
+
+Codex 通常会自动检测 skill 变更；如果没有出现，重启 Codex。参考 [Codex Agent Skills 文档](https://developers.openai.com/codex/skills)。
+
+#### OpenClaw
+
+安装到当前 workspace：
+
+```bash
+openclaw skills install ./skills/keyframe-prompt --as keyframe-prompt
+openclaw skills install ./skills/shots-prompt-writing --as shots-prompt-writing
+```
+
+安装为所有本地 OpenClaw agents 可见的全局 skills：
+
+```bash
+openclaw skills install ./skills/keyframe-prompt --as keyframe-prompt --global
+openclaw skills install ./skills/shots-prompt-writing --as shots-prompt-writing --global
+```
+
+OpenClaw 的本地安装要求源码根目录直接包含 `SKILL.md`。参考 [OpenClaw Skills 文档](https://docs.openclaw.ai/tools/skills)。
+
+#### Hermes
+
+把源码目录复制到 Hermes skills 目录：
+
+```bash
+mkdir -p ~/.hermes/skills/storyverse
+cp -R skills/keyframe-prompt ~/.hermes/skills/storyverse/
+cp -R skills/shots-prompt-writing ~/.hermes/skills/storyverse/
+```
+
+然后开启新 session，或 reset 当前 session，让 Hermes 刷新 skills list。Hermes 也支持对兼容来源使用 `hermes skills install`。参考 [Hermes Skills System 文档](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills) 和 [Working with Skills](https://hermes-agent.nousresearch.com/docs/guides/work-with-skills)。
+
+#### 其他 agents
+
+使用同样的可移植目录结构：
+
+```text
+<agent-skills-root>/
+└── keyframe-prompt/
+    ├── SKILL.md
+    ├── assets/
+    └── references/
+```
+
+如果该 agent 支持 Agent Skills 标准，就把它指向 `skills/<name>/` 目录，或者把这些目录复制到它配置的 skills root。
 
 ### 什么时候用
 
